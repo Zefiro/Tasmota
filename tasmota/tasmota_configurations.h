@@ -21,6 +21,22 @@
 #define _TASMOTA_CONFIGURATIONS_H_
 
 /*********************************************************************************************\
+ * [tasmota-dragon-neopixel.bin]
+ * Additional RGB color effects (based on standard image)
+\*********************************************************************************************/
+
+#ifdef FIRMWARE_DRAGON_NEOPIXEL
+
+#undef CODE_IMAGE_STR
+#define CODE_IMAGE_STR "derg"
+
+#ifndef USE_DERG_RGB
+#define USE_DERG_RGB
+#endif
+
+#endif  // FIRMWARE_DRAGON_NEOPIXEL
+
+/*********************************************************************************************\
  * [tasmota-sensors.bin]
  * Provide an image with useful supported sensors enabled
 \*********************************************************************************************/

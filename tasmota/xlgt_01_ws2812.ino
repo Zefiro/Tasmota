@@ -38,13 +38,25 @@
 
 #define XLGT_01             1
 
+#ifdef USE_DERG_RGB
 const uint8_t WS2812_SCHEMES = 9;      // Number of WS2812 schemes
+#else
+const uint8_t WS2812_SCHEMES = 8;      // Number of WS2812 schemes
+#endif // USE_DERG_RGB
 
 const char kWs2812Commands[] PROGMEM = "|"  // No prefix
-  D_CMND_LED "|" D_CMND_PIXELS "|" D_CMND_ROTATION "|" D_CMND_WIDTH "|" D_CMND_DRAGON;
+  D_CMND_LED "|" D_CMND_PIXELS "|" D_CMND_ROTATION "|" D_CMND_WIDTH 
+#ifdef USE_DERG_RGB
+  "|" D_CMND_DRAGON
+#endif // USE_DERG_RGB
+  ;
 
 void (* const Ws2812Command[])(void) PROGMEM = {
-  &CmndLed, &CmndPixels, &CmndRotation, &CmndWidth, &CmndDragon };
+  &CmndLed, &CmndPixels, &CmndRotation, &CmndWidth
+#ifdef USE_DERG_RGB
+  , &CmndDragon
+#endif // USE_DERG_RGB
+  };
 
 #include <NeoPixelBus.h>
 
@@ -136,7 +148,11 @@ WsColor kHanukkah[2] = { 0,0,255, 255,255,255 };
 WsColor kwanzaa[3] = { 255,0,0, 0,0,0, 0,255,0 };
 WsColor kRainbow[7] = { 255,0,0, 255,128,0, 255,255,0, 0,255,0, 0,0,255, 128,0,255, 255,0,255 };
 WsColor kFire[3] = { 255,0,0, 255,102,0, 255,192,0 };
+#ifdef USE_DERG_RGB
 ColorScheme kSchemes[WS2812_SCHEMES -2] = {  // Skip clock+dragon schemes
+#else
+ColorScheme kSchemes[WS2812_SCHEMES -1] = {  // Skip clock scheme
+#endif // USE_DERG_RGB
   kIncandescent, 2,
   kRgb, 3,
   kChristmas, 2,
@@ -371,6 +387,7 @@ void Ws2812Bars(uint32_t schemenr)
   Ws2812StripShow();
 }
 
+#ifdef USE_DERG_RGB
 // note: when using Settings.dimmer, scale it: changeUIntScale(dimmer, 0, 100, 0, 255)
 long dragonOffset_current;
 void Ws2812Dragon(void)
@@ -469,6 +486,8 @@ void DragonFx_Blink(uint16_t firstLed, uint16_t lastLed, uint8_t dimmer) {
   }
 }
 
+#endif // USE_DERG_RGB
+
 void Ws2812Clear(void)
 {
   strip->ClearTo(0);
@@ -565,10 +584,12 @@ void Ws2812ShowScheme(void)
         Ws2812.show_next = 0;
       }
       break;
+#ifdef USE_DERG_RGB
     case 8: // Dragon
       Ws2812Dragon();
       Ws2812.show_next = 1;
       break;
+#endif // USE_DERG_RGB
     default:
       if (1 == Settings.light_fade) {
         Ws2812Gradient(scheme -1);
@@ -682,6 +703,7 @@ void CmndWidth(void)
  * 3 - rainbow (use Dragon1 <x> to give hue offset per pixel)
  * 4 - rainbow (like 4, but different direction)
  */
+#ifdef USE_DERG_RGB
 void CmndDragon(void)
 {
   switch(XdrvMailbox.index) {
@@ -731,6 +753,7 @@ void CmndDragon(void)
       ResponseCmndIdxNumber(Settings.dragon_offset);
   }
 }
+#endif // USE_DERG_RGB
 
 /*********************************************************************************************\
  * Interface

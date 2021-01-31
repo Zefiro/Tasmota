@@ -639,6 +639,8 @@ struct {
   uint16_t      shd_warmup_brightness;     // F5C
   uint8_t       shd_warmup_time;           // F5E
   
+  #define NONFREE 0
+  #ifdef USE_DERG_RGB
   // DRAGON settings
   uint16_t dragon_offset;
   uint16_t dragon_len1;
@@ -647,8 +649,12 @@ struct {
   uint8_t dragon_fx1;
   uint8_t dragon_fx2;
   uint8_t dragon_fx3;
+#undef NONFREE
+// TODO how to "add" using macros?
+#define NONFREE 11
+#endif  // USE_DERG_RGB
 
-  uint8_t       free_f5e[84-11];              // F5E - Decrement if adding new Setting variables just above and below
+  uint8_t       free_f5e[84 - NONFREE];              // F5E - Decrement if adding new Setting variables just above and below
 
   // Only 32 bit boundary variables below
   SysBitfield5  flag5;                     // FB4

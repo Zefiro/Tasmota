@@ -11,6 +11,7 @@ cache: false
 
 env:
   - ENV=tasmota
+  - ENV=tasmota-dragon-neopixel
   - ENV=tasmota-minimal
   - ENV=tasmota-lite
   - ENV=tasmota-knx
