@@ -1,7 +1,7 @@
 /*
   xdrv_23_zigbee_1_headers.ino - zigbee support for Tasmota
 
-  Copyright (C) 2020  Theo Arends and Stephan Hadinger
+  Copyright (C) 2021  Theo Arends and Stephan Hadinger
 
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -45,7 +45,7 @@ public:
 };
 
 typedef int32_t (*ZB_Func)(uint8_t value);
-typedef int32_t (*ZB_RecvMsgFunc)(int32_t res, const class SBuffer &buf);
+typedef int32_t (*ZB_RecvMsgFunc)(int32_t res, const SBuffer &buf);
 
 // Labels used in the State Machine -- internal only
 const uint8_t  ZIGBEE_LABEL_RESTART = 1;     // Restart the state_machine in a different mode
@@ -90,6 +90,10 @@ public:
   bool recv_until = false;            // ignore all messages until the received frame fully matches
   bool eeprom_present = false;        // is the ZBBridge EEPROM present?
   bool eeprom_ready = false;          // is the ZBBridge EEPROM formatted and ready?
+  // Zigbee mapping
+  bool mapping_in_progress = false;   // is there a mapping in progress
+  bool mapping_ready = false;         // do we have mapping information ready
+  uint32_t mapping_end_time = 0;
 
   uint8_t on_error_goto = ZIGBEE_LABEL_ABORT;         // on error goto label, 99 default to abort
   uint8_t on_timeout_goto = ZIGBEE_LABEL_ABORT;       // on timeout goto label, 99 default to abort
@@ -101,7 +105,12 @@ public:
   ZB_RecvMsgFunc recv_func = nullptr;          // function to call when message is expected
   ZB_RecvMsgFunc recv_unexpected = nullptr;    // function called when unexpected message is received
 
+#ifdef USE_ZIGBEE_EZSP
   uint32_t permit_end_time = 0;       // timestamp when permit join ends
+  uint16_t ezsp_version = 0;
+#elif defined(USE_ZIGBEE_ZNP)
+  bool permit_end_time = false;       // in ZNP mode it's only a boolean
+#endif
 
 #ifdef USE_ZIGBEE_EZSP
   Eeprom24C512 eeprom;     // takes only 1 bytes of RAM
@@ -110,6 +119,7 @@ public:
 struct ZigbeeStatus zigbee;
 SBuffer *zigbee_buffer = nullptr;
 
+void zigbeeZCLSendCmd(const ZigbeeZCLSendMessage &msg);
 void ZigbeeZCLSend_Raw(const ZigbeeZCLSendMessage &zcl);
 bool ZbAppendWriteBuf(SBuffer & buf, const Z_attribute & attr, bool prepend_status_ok = false);
 

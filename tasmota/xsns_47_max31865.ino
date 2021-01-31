@@ -1,7 +1,7 @@
 /*
   xsns_39_MAX31865.ino - MAX31865 thermocouple sensor support for Tasmota
 
-  Copyright (C) 2020 Alberto Lopez Siemens
+  Copyright (C) 2021  Alberto Lopez Siemens
 
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -53,7 +53,7 @@ void MAX31865_Init(void) {
   for (uint32_t i = 0; i < MAX_MAX31865S; i++) {
     if (PinUsed(GPIO_SSPI_MAX31865_CS1, i)) {
       max31865_pins_used |= 1 << i;  //set lowest bit
-      max31865[0].setPins(
+      max31865[i].setPins(
         Pin(GPIO_SSPI_MAX31865_CS1, i),
         Pin(GPIO_SSPI_MOSI),
         Pin(GPIO_SSPI_MISO),
@@ -79,7 +79,7 @@ void MAX31865_GetResult(void) {
       rtd = max31865[i].readRTD();
       MAX31865_Result[i].Rtd = rtd;
       MAX31865_Result[i].PtdResistance = max31865[i].rtd_to_resistance(rtd, MAX31865_REF_RES);
-      MAX31865_Result[i].PtdTemp = max31865[i].rtd_to_temperature(rtd, MAX31865_PTD_RES, MAX31865_REF_RES) + MAX31865_PTD_BIAS;
+      MAX31865_Result[i].PtdTemp = ConvertTemp(max31865[i].rtd_to_temperature(rtd, MAX31865_PTD_RES, MAX31865_REF_RES) + MAX31865_PTD_BIAS);
     }
   }
 }
@@ -88,18 +88,15 @@ void MAX31865_Show(bool Json) {
   uint8_t report_once = 0;
   for (uint32_t i = 0; i < MAX_MAX31865S; i++) {
     if (max31865_pins_used & (1 << i)) {
-      char temperature[33];
-      char resistance[33];
-
-      dtostrfd(MAX31865_Result[i].PtdResistance, Settings.flag2.temperature_resolution, resistance);
-      dtostrfd(MAX31865_Result[i].PtdTemp, Settings.flag2.temperature_resolution, temperature);
-
       if (Json) {
-        ResponseAppend_P(PSTR(",\"MAX31865%c%d\":{\"" D_JSON_TEMPERATURE "\":%s,\"" D_JSON_RESISTANCE "\":%s,\"" D_JSON_ERROR "\":%d}"), \
-          IndexSeparator(), i, temperature, resistance, MAX31865_Result[i].ErrorCode);
+        ResponseAppend_P(PSTR(",\"MAX31865%c%d\":{\"" D_JSON_TEMPERATURE "\":%*_f,\"" D_JSON_RESISTANCE "\":%*_f,\"" D_JSON_ERROR "\":%d}"), \
+          IndexSeparator(), i,
+          Settings.flag2.temperature_resolution, &MAX31865_Result[i].PtdTemp,
+          Settings.flag2.temperature_resolution, &MAX31865_Result[i].PtdResistance,
+          MAX31865_Result[i].ErrorCode);
         if ((0 == TasmotaGlobal.tele_period) && (!report_once)) {
 #ifdef USE_DOMOTICZ
-          DomoticzSensor(DZ_TEMP, temperature);
+          DomoticzFloatSensor(DZ_TEMP, MAX31865_Result[i].PtdTemp);
 #endif  // USE_DOMOTICZ
 #ifdef USE_KNX
           KnxSensor(KNX_TEMPERATURE, MAX31865_Result[i].PtdTemp);
@@ -110,7 +107,7 @@ void MAX31865_Show(bool Json) {
       } else {
         char sensorname[33];
         sprintf(sensorname, "MAX31865%c%d", IndexSeparator(), i);
-        WSContentSend_PD(HTTP_SNS_TEMP, sensorname, temperature, TempUnit());
+        WSContentSend_Temp(sensorname, MAX31865_Result[i].PtdTemp);
 #endif  // USE_WEBSERVER
       }
     }
