@@ -37,6 +37,22 @@
 #endif  // FIRMWARE_DRAGON_NEOPIXEL
 
 /*********************************************************************************************\
+ * [tasmota-dragon-sensors.bin]
+ * (based on sensors image)
+\*********************************************************************************************/
+
+#ifdef FIRMWARE_DRAGON_SENSORS
+
+#undef CODE_IMAGE_STR
+#define CODE_IMAGE_STR "derg"
+
+#ifndef USE_DERG_SENSORS
+#define USE_DERG_SENSORS
+#endif
+
+#endif  // FIRMWARE_DRAGON_SENSORS
+
+/*********************************************************************************************\
  * [tasmota-sensors.bin]
  * Provide an image with useful supported sensors enabled
 \*********************************************************************************************/
