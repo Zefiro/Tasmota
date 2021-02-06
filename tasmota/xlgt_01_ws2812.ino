@@ -460,7 +460,7 @@ void DragonFx_Rainbow(uint16_t firstLed, uint16_t lastLed, int16_t speed, uint8_
       sat = 255;
       dragonOffset_current = (dragonOffset_current + speed);
       hue = dragonOffset_current / 10;
-      light_state.HsToRgb(hue, sat, &r, &g, &b);
+      HsToRgb(hue, sat, &r, &g, &b);
       c.R = changeUIntScale(r, 0, 255, 0, dimmer);
       c.G = changeUIntScale(g, 0, 255, 0, dimmer);
       c.B = changeUIntScale(b, 0, 255, 0, dimmer);
