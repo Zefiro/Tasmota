@@ -393,10 +393,28 @@ void Ws2812Bars(uint32_t schemenr)
 
 #ifdef USE_DERG_RGB
 // note: when using Settings.dimmer, scale it: changeUIntScale(dimmer, 0, 100, 0, 255)
-long dragonOffset_current;
+int64_t dragonOffset_current;
+uint32_t dragonOffset_head;
+uint32_t dragonOffset_head_remainder;
+int64_t dragonOffset_sync;
+unsigned long dragonLastMillis;
+uint8_t dragonEnergySaver;
+
 void Ws2812Dragon(void)
 {
-  dragonOffset_current = (Settings.light_speed > 0) ? ((u_int64_t) millis()) * 360 / 500 / Settings.light_speed / Settings.light_speed : 0;
+  unsigned long now = millis();
+  uint16_t diff = now - dragonLastMillis;
+  dragonLastMillis = now;
+  if (Settings.light_speed > 0) {
+    dragonOffset_head_remainder += diff * 360;
+    uint32_t divisor = 500 * Settings.light_speed * Settings.light_speed;
+    while(dragonOffset_head_remainder >= divisor) {
+      dragonOffset_head_remainder -= divisor;
+      dragonOffset_head++;
+    }
+  }
+//  dragonOffset_current = dragonOffset_head;
+  dragonOffset_current = (Settings.light_speed > 0) ? (((u_int64_t) millis()) - dragonOffset_sync) * 360 / 500 / Settings.light_speed / Settings.light_speed : 0;
 
   uint8_t a = 0;
   uint8_t b = Settings.dragon_len1;
@@ -405,6 +423,9 @@ void Ws2812Dragon(void)
   Ws2812Dragon_Fx(a, b, Light.power & 2 ? Settings.dragon_fx2 : 0, Settings.light_color[1]);
   a = b; b += Settings.dragon_len3;
   Ws2812Dragon_Fx(a, b, Light.power & 2 ? Settings.dragon_fx3 : 0, Settings.light_color[1]);
+  if (dragonEnergySaver) {
+    for (uint32_t i = Settings.dragon_len1; i < Settings.dragon_len1 + Settings.dragon_len2 + Settings.dragon_len3; i+=dragonEnergySaver) { strip->SetPixelColor(i, 0); }
+  }
   Ws2812StripShow();
 }
 
@@ -421,6 +442,8 @@ void Ws2812Dragon_Fx(uint16_t firstLed, uint16_t lastLed, uint8_t fx, uint8_t di
       c.R = 0; c.G = 0; c.B = 0;
       for (uint32_t i = firstLed; i < lastLed; i++) { strip->SetPixelColor(i, c); }
       break;
+    case 15:
+      dragonOffset_current = dragonOffset_head;
     case 1:
 #if (USE_WS2812_CTYPE > NEO_3LED)
       c.R = (Light.power & 4) && Settings.light_color[2] < 128 ? changeUIntScale(128-Settings.light_color[2], 0, 127, 0, dimmer) : 0;
@@ -444,6 +467,12 @@ void Ws2812Dragon_Fx(uint16_t firstLed, uint16_t lastLed, uint8_t fx, uint8_t di
     case 5:
       DragonFx_Blink(firstLed, lastLed, dimmer);
       break;
+    case 6:
+      DragonFx_Colorlist(firstLed, lastLed, Settings.dragon_offset, dimmer);
+      break;
+    case 7:
+      DragonFx_Colorlist(firstLed, lastLed, -Settings.dragon_offset, dimmer);
+      break;
   }
 }
 
@@ -455,16 +484,78 @@ void DragonFx_Rainbow(uint16_t firstLed, uint16_t lastLed, int16_t speed, uint8_
   RgbColor c;
 #endif
   for (uint32_t i = firstLed; i < lastLed; i++) {
-      uint8_t r, g, b, sat;
-      uint16_t hue;
-      sat = 255;
-      dragonOffset_current = (dragonOffset_current + speed);
-      hue = dragonOffset_current / 10;
-      HsToRgb(hue, sat, &r, &g, &b);
-      c.R = changeUIntScale(r, 0, 255, 0, dimmer);
-      c.G = changeUIntScale(g, 0, 255, 0, dimmer);
-      c.B = changeUIntScale(b, 0, 255, 0, dimmer);
-      strip->SetPixelColor(i, c);
+    uint8_t r, g, b, sat;
+    uint16_t hue;
+    sat = 255;
+    dragonOffset_current += speed;
+    hue = dragonOffset_current / 10;
+    HsToRgb(hue, sat, &r, &g, &b);
+    c.R = changeUIntScale(r, 0, 255, 0, dimmer);
+    c.G = changeUIntScale(g, 0, 255, 0, dimmer);
+    c.B = changeUIntScale(b, 0, 255, 0, dimmer);
+    strip->SetPixelColor(i, c);
+  }
+}
+
+#define DRAGON_COLORLIST_NUM 7
+struct colorPoint {
+  uint8_t r, g, b;
+  uint16_t len;
+  int16_t dr, dg, db;
+  uint16_t lensum;
+} colorpoints[DRAGON_COLORLIST_NUM];
+uint16_t colorPointTotalLen;
+
+void DragonColorlistInit() {
+  colorpoints[0].r =   0; colorpoints[0].g = 255; colorpoints[0].b =   0; colorpoints[0].len = 600;
+  colorpoints[1].r =   0; colorpoints[1].g = 255; colorpoints[1].b = 255; colorpoints[1].len = 600;
+  colorpoints[2].r =   0; colorpoints[2].g =   0; colorpoints[2].b = 255; colorpoints[2].len = 600;
+  colorpoints[3].r = 255; colorpoints[3].g =   0; colorpoints[3].b = 255; colorpoints[3].len = 600;
+  colorpoints[4].r = 255; colorpoints[4].g =   0; colorpoints[4].b =   0; colorpoints[4].len = 600;
+  colorpoints[5].r = 255; colorpoints[5].g =   0; colorpoints[5].b =   0; colorpoints[5].len =  50;
+  colorpoints[6].r = 255; colorpoints[6].g = 255; colorpoints[6].b =   0; colorpoints[6].len = 600;
+  for (uint8_t i = 0; i < DRAGON_COLORLIST_NUM; i++) {
+    struct colorPoint &cp = colorpoints[i];
+    struct colorPoint &ncp = colorpoints[(i+1) % DRAGON_COLORLIST_NUM];
+    cp.lensum = colorPointTotalLen;
+    colorPointTotalLen += cp.len;
+    cp.dr = ncp.r - cp.r;
+    cp.dg = ncp.g - cp.g;
+    cp.db = ncp.b - cp.b;
+  }
+}
+
+uint8_t map2(int8_t a, int32_t b, int32_t y, uint16_t z) {
+	return ((uint8_t) (b * z / y)) + a;
+}
+
+void DragonFx_Colorlist(uint16_t firstLed, uint16_t lastLed, int16_t speed, uint8_t dimmer) {
+  if (!colorPointTotalLen) DragonColorlistInit();
+#if (USE_WS2812_CTYPE > NEO_3LED)
+  RgbwColor c;
+  c.W = 0;
+#else
+  RgbColor c;
+#endif
+  uint8_t cpi = 0;
+  for (uint16_t i = firstLed; i < lastLed; i++) {
+    dragonOffset_current += speed;
+    while (dragonOffset_current >= colorPointTotalLen) { dragonOffset_current -= colorPointTotalLen; }
+    while (dragonOffset_current < 0) { dragonOffset_current += colorPointTotalLen; }
+    while (dragonOffset_current < colorpoints[cpi].lensum) { cpi--; }
+    while (dragonOffset_current >= colorpoints[cpi].lensum + colorpoints[cpi].len) { cpi++; }
+    uint16_t pos = dragonOffset_current - colorpoints[cpi].lensum;
+    struct colorPoint &cp = colorpoints[cpi];
+
+    uint8_t r, g, b;
+
+    r = map2(cp.r, cp.dr, cp.len, pos);
+    g = map2(cp.g, cp.dg, cp.len, pos);
+    b = map2(cp.b, cp.db, cp.len, pos);
+    c.R = changeUIntScale(r, 0, 255, 0, dimmer);
+    c.G = changeUIntScale(g, 0, 255, 0, dimmer);
+    c.B = changeUIntScale(b, 0, 255, 0, dimmer);
+    strip->SetPixelColor(i, c);
   }
 }
 
@@ -701,6 +792,8 @@ void CmndWidth(void)
  * 5 - effect for segment 1
  * 6 - effect for segment 2
  * 7 - effect for segment 3
+ * 8 - sync offset
+ * 9 - energy saver (0=off 2=blank every second led)
  * 
  * magic value for "no parameter given" is -99
  * 
@@ -753,6 +846,19 @@ void CmndDragon(void)
         Settings.dragon_fx3 = XdrvMailbox.payload;
       }
       ResponseCmndIdxNumber(Settings.dragon_fx3);
+      break;
+    case 8:
+      if (-99 != XdrvMailbox.payload) {
+        dragonOffset_sync = ((uint64_t) millis()) - ((uint64_t) XdrvMailbox.payload);
+        dragonOffset_head = XdrvMailbox.payload;
+      }
+      ResponseCmndIdxNumber(dragonOffset_sync);
+      break;
+    case 9:
+      if (-99 != XdrvMailbox.payload) {
+        dragonEnergySaver = (uint8_t) XdrvMailbox.payload;
+      }
+      ResponseCmndIdxNumber(dragonEnergySaver);
       break;
     default: // set hue-offset-per-led in rainbow mode
       if (-99 != XdrvMailbox.payload) {
