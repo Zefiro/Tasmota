@@ -417,7 +417,7 @@ void Ws2812Bars(uint32_t schemenr)
 }
 
 #ifdef USE_DERG_RGB
-// note: when using Settings.dimmer, scale it: changeUIntScale(dimmer, 0, 100, 0, 255)
+// note: when using Settings->dimmer, scale it: changeUIntScale(dimmer, 0, 100, 0, 255)
 int64_t dragonOffset_current;
 uint32_t dragonOffset_head;
 uint32_t dragonOffset_head_remainder;
@@ -430,26 +430,26 @@ void Ws2812Dragon(void)
   unsigned long now = millis();
   uint16_t diff = now - dragonLastMillis;
   dragonLastMillis = now;
-  if (Settings.light_speed > 0) {
+  if (Settings->light_speed > 0) {
     dragonOffset_head_remainder += diff * 360;
-    uint32_t divisor = 500 * Settings.light_speed * Settings.light_speed;
+    uint32_t divisor = 500 * Settings->light_speed * Settings->light_speed;
     while(dragonOffset_head_remainder >= divisor) {
       dragonOffset_head_remainder -= divisor;
       dragonOffset_head++;
     }
   }
 //  dragonOffset_current = dragonOffset_head;
-  dragonOffset_current = (Settings.light_speed > 0) ? (((u_int64_t) millis()) - dragonOffset_sync) * 360 / 500 / Settings.light_speed / Settings.light_speed : 0;
+  dragonOffset_current = (Settings->light_speed > 0) ? (((u_int64_t) millis()) - dragonOffset_sync) * 360 / 500 / Settings->light_speed / Settings->light_speed : 0;
 
   uint8_t a = 0;
-  uint8_t b = Settings.dragon_len1;
-  Ws2812Dragon_Fx(a, b, Light.power & 1 ? Settings.dragon_fx1 : 0, Settings.light_color[0]);
-  a = b; b += Settings.dragon_len2;
-  Ws2812Dragon_Fx(a, b, Light.power & 2 ? Settings.dragon_fx2 : 0, Settings.light_color[1]);
-  a = b; b += Settings.dragon_len3;
-  Ws2812Dragon_Fx(a, b, Light.power & 2 ? Settings.dragon_fx3 : 0, Settings.light_color[1]);
+  uint8_t b = Settings->dragon_len1;
+  Ws2812Dragon_Fx(a, b, Light.power & 1 ? Settings->dragon_fx1 : 0, Settings->light_color[0]);
+  a = b; b += Settings->dragon_len2;
+  Ws2812Dragon_Fx(a, b, Light.power & 2 ? Settings->dragon_fx2 : 0, Settings->light_color[1]);
+  a = b; b += Settings->dragon_len3;
+  Ws2812Dragon_Fx(a, b, Light.power & 2 ? Settings->dragon_fx3 : 0, Settings->light_color[1]);
   if (dragonEnergySaver) {
-    for (uint32_t i = Settings.dragon_len1; i < Settings.dragon_len1 + Settings.dragon_len2 + Settings.dragon_len3; i+=dragonEnergySaver) { strip->SetPixelColor(i, 0); }
+    for (uint32_t i = Settings->dragon_len1; i < Settings->dragon_len1 + Settings->dragon_len2 + Settings->dragon_len3; i+=dragonEnergySaver) { strip->SetPixelColor(i, 0); }
   }
   Ws2812StripShow();
 }
@@ -471,9 +471,9 @@ void Ws2812Dragon_Fx(uint16_t firstLed, uint16_t lastLed, uint8_t fx, uint8_t di
       dragonOffset_current = dragonOffset_head;
     case 1:
 #if (USE_WS2812_CTYPE > NEO_3LED)
-      c.R = (Light.power & 4) && Settings.light_color[2] < 128 ? changeUIntScale(128-Settings.light_color[2], 0, 127, 0, dimmer) : 0;
+      c.R = (Light.power & 4) && Settings->light_color[2] < 128 ? changeUIntScale(128-Settings->light_color[2], 0, 127, 0, dimmer) : 0;
       c.G = 0;
-      c.B = (Light.power & 4) && Settings.light_color[2] > 128 ? changeUIntScale(Settings.light_color[2]-128, 0, 127, 0, dimmer) : 0;
+      c.B = (Light.power & 4) && Settings->light_color[2] > 128 ? changeUIntScale(Settings->light_color[2]-128, 0, 127, 0, dimmer) : 0;
       c.W = changeUIntScale(255, 0, 255, 0, dimmer);
 #else
       c.R = dimmer; c.G = c.R; c.B = c.R;
@@ -484,19 +484,19 @@ void Ws2812Dragon_Fx(uint16_t firstLed, uint16_t lastLed, uint8_t fx, uint8_t di
       DragonFx_Rainbow(firstLed, lastLed, 0, dimmer);
       break;
     case 3:
-      DragonFx_Rainbow(firstLed, lastLed, Settings.dragon_offset, dimmer);
+      DragonFx_Rainbow(firstLed, lastLed, Settings->dragon_offset, dimmer);
       break;
     case 4:
-      DragonFx_Rainbow(firstLed, lastLed, -Settings.dragon_offset, dimmer);
+      DragonFx_Rainbow(firstLed, lastLed, -Settings->dragon_offset, dimmer);
       break;
     case 5:
       DragonFx_Blink(firstLed, lastLed, dimmer);
       break;
     case 6:
-      DragonFx_Colorlist(firstLed, lastLed, Settings.dragon_offset, dimmer);
+      DragonFx_Colorlist(firstLed, lastLed, Settings->dragon_offset, dimmer);
       break;
     case 7:
-      DragonFx_Colorlist(firstLed, lastLed, -Settings.dragon_offset, dimmer);
+      DragonFx_Colorlist(firstLed, lastLed, -Settings->dragon_offset, dimmer);
       break;
   }
 }
@@ -592,7 +592,7 @@ void DragonFx_Blink(uint16_t firstLed, uint16_t lastLed, uint8_t dimmer) {
   RgbColor c;
 #endif
   uint32_t now = millis();
-  uint8_t i = Settings.light_speed;
+  uint8_t i = Settings->light_speed;
   while (i) {
     now /= 10;
     i--;
@@ -835,42 +835,42 @@ void CmndDragon(void)
   switch(XdrvMailbox.index) {
     case 2:
       if (-99 != XdrvMailbox.payload) {
-        Settings.dragon_len1 = XdrvMailbox.payload;
+        Settings->dragon_len1 = XdrvMailbox.payload;
       }
-      ResponseCmndIdxNumber(Settings.dragon_len1);
+      ResponseCmndIdxNumber(Settings->dragon_len1);
       strip->ClearTo(0);
       break;
     case 3:
       if (-99 != XdrvMailbox.payload) {
-        Settings.dragon_len2 = XdrvMailbox.payload;
+        Settings->dragon_len2 = XdrvMailbox.payload;
       }
-      ResponseCmndIdxNumber(Settings.dragon_len2);
+      ResponseCmndIdxNumber(Settings->dragon_len2);
       strip->ClearTo(0);
       break;
     case 4:
       if (-99 != XdrvMailbox.payload) {
-        Settings.dragon_len3 = XdrvMailbox.payload;
+        Settings->dragon_len3 = XdrvMailbox.payload;
       }
-      ResponseCmndIdxNumber(Settings.dragon_len3);
+      ResponseCmndIdxNumber(Settings->dragon_len3);
       strip->ClearTo(0);
       break;
     case 5:
       if (-99 != XdrvMailbox.payload) {
-        Settings.dragon_fx1 = XdrvMailbox.payload;
+        Settings->dragon_fx1 = XdrvMailbox.payload;
       }
-      ResponseCmndIdxNumber(Settings.dragon_fx1);
+      ResponseCmndIdxNumber(Settings->dragon_fx1);
       break;
     case 6:
       if (-99 != XdrvMailbox.payload) {
-        Settings.dragon_fx2 = XdrvMailbox.payload;
+        Settings->dragon_fx2 = XdrvMailbox.payload;
       }
-      ResponseCmndIdxNumber(Settings.dragon_fx2);
+      ResponseCmndIdxNumber(Settings->dragon_fx2);
       break;
     case 7:
       if (-99 != XdrvMailbox.payload) {
-        Settings.dragon_fx3 = XdrvMailbox.payload;
+        Settings->dragon_fx3 = XdrvMailbox.payload;
       }
-      ResponseCmndIdxNumber(Settings.dragon_fx3);
+      ResponseCmndIdxNumber(Settings->dragon_fx3);
       break;
     case 8:
       if (-99 != XdrvMailbox.payload) {
@@ -887,9 +887,9 @@ void CmndDragon(void)
       break;
     default: // set hue-offset-per-led in rainbow mode
       if (-99 != XdrvMailbox.payload) {
-        Settings.dragon_offset = XdrvMailbox.payload;
+        Settings->dragon_offset = XdrvMailbox.payload;
       }
-      ResponseCmndIdxNumber(Settings.dragon_offset);
+      ResponseCmndIdxNumber(Settings->dragon_offset);
   }
 }
 #endif // USE_DERG_RGB

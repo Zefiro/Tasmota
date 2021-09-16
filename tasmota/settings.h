@@ -730,7 +730,6 @@ typedef struct {
   uint8_t       shd_leading_edge;          // F5B
   uint16_t      shd_warmup_brightness;     // F5C
   uint8_t       shd_warmup_time;           // F5E
-<<<<<<< HEAD
   
   #define NONFREE 0
   #ifdef USE_DERG_RGB
@@ -747,11 +746,7 @@ typedef struct {
 #define NONFREE 11
 #endif  // USE_DERG_RGB
 
-  uint8_t       free_f5e[72 - NONFREE];              // F5E - Decrement if adding new Setting variables just above and below
-=======
-
-  uint8_t       free_f5f[61];              // F5F - Decrement if adding new Setting variables just above and below
->>>>>>> development
+  uint8_t       free_f5f[61 - NONFREE];              // F5F - Decrement if adding new Setting variables just above and below
 
   // Only 32 bit boundary variables below
 
