@@ -83,11 +83,13 @@ uint8_t ufs_dir;
 // 0 = None, 1 = SD, 2 = ffat, 3 = littlefs
 uint8_t ufs_type;
 uint8_t ffs_type;
-bool download_busy;
 
-
-
-
+struct {
+  char run_file[48];
+  int run_file_pos = -1;
+  bool run_file_mutex = 0;
+  bool download_busy;
+} UfsData;
 
 /*********************************************************************************************/
 
@@ -107,8 +109,8 @@ void UfsInitOnce(void) {
 
 #ifdef ESP32
   // try lfs first
-  ffsp = &LITTLEFS;
-  if (!LITTLEFS.begin(true)) {
+  ffsp = &LittleFS;
+  if (!LittleFS.begin(true)) {
     // ffat is second
     ffsp = &FFat;
     if (!FFat.begin(true)) {
@@ -127,8 +129,9 @@ void UfsInitOnce(void) {
   dfsp = ffsp;
 }
 
-// actually this inits flash file only
+// Called from tasmota.ino at restart. This inits flash file only
 void UfsInit(void) {
+  UfsData.run_file_pos = -1;
   UfsInitOnce();
   if (ufs_type) {
     AddLog(LOG_LEVEL_INFO, PSTR("UFS: FlashFS mounted with %d kB free"), UfsInfo(1, 0));
@@ -220,9 +223,9 @@ uint32_t UfsInfo(uint32_t sel, uint32_t type) {
 #endif  // ESP8266
 #ifdef ESP32
       if (sel == 0) {
-        result = LITTLEFS.totalBytes();
+        result = LittleFS.totalBytes();
       } else {
-        result = LITTLEFS.totalBytes() - LITTLEFS.usedBytes();
+        result = LittleFS.totalBytes() - LittleFS.usedBytes();
       }
 #endif  // ESP32
       break;
@@ -276,7 +279,7 @@ bool TfsFileExists(const char *fname){
 
   bool yes = ffsp->exists(fname);
   if (!yes) {
-    AddLog(LOG_LEVEL_INFO, PSTR("TFS: File not found"));
+    AddLog(LOG_LEVEL_DEBUG, PSTR("TFS: File '%s' not found"), fname +1);  // Skip leading slash
   }
   return yes;
 }
@@ -317,7 +320,7 @@ bool TfsLoadFile(const char *fname, uint8_t *buf, uint32_t len) {
 
   File file = ffsp->open(fname, "r");
   if (!file) {
-    AddLog(LOG_LEVEL_INFO, PSTR("TFS: File not found"));
+    AddLog(LOG_LEVEL_INFO, PSTR("TFS: File '%s' not found"), fname +1);  // Skip leading slash
     return false;
   }
 
@@ -336,15 +339,102 @@ bool TfsDeleteFile(const char *fname) {
   return true;
 }
 
+bool TfsRenameFile(const char *fname1, const char *fname2) {
+  if (!ffs_type) { return false; }
+
+  if (!ffsp->rename(fname1, fname2)) {
+    AddLog(LOG_LEVEL_INFO, PSTR("TFS: Rename failed"));
+    return false;
+  }
+  return true;
+}
+
+/*********************************************************************************************\
+ * File command execute support
+\*********************************************************************************************/
+
+bool UfsExecuteCommandFileReady(void) {
+  return (UfsData.run_file_pos < 0);   // Check file ready to disable concurrency
+}
+
+void UfsExecuteCommandFileLoop(void) {
+  if (UfsExecuteCommandFileReady() || !ffs_type) { return; }
+
+  if (BACKLOG_EMPTY && strlen(UfsData.run_file) && !UfsData.run_file_mutex) {
+    File file = ffsp->open(UfsData.run_file, "r");
+    if (!file || !file.seek(UfsData.run_file_pos)) {
+      UfsData.run_file_pos = -1;       // Signal file ready
+      return;
+    }
+
+    UfsData.run_file_mutex = true;
+
+    char cmd_line[512];
+    cmd_line[0] = '\0';                // Clear in case of re-entry
+    while (file.available()) {
+      uint16_t index = 0;
+      bool comment = false;
+      while (file.available()) {
+        uint8_t buf[1];
+        file.read(buf, 1);
+        if ((buf[0] == '\n') || (buf[0] == '\r')) {
+          break;                       // End of command with linefeed or carriage return
+        }
+//        else if (index && !comment && (buf[0] == ';')) {
+//          break;                       // End of command on multi command line
+//        }
+        else if ((0 == index) && isspace(buf[0])) {
+                                       // Skip leading spaces (' ','\t','\n','\v','\f','\r')
+        }
+        else if ((0 == index) && (buf[0] == ';')) {
+          comment = true;              // Ignore comment lines until linefeed or carriage return
+        }
+        else if (!comment && (index < sizeof(cmd_line) - 2)) {
+          cmd_line[index++] = buf[0];  // Build command
+        }
+      }
+      if ((index > 0) && (index < sizeof(cmd_line) - 1)) {
+        cmd_line[index] = '\0';        // Valid command received
+        break;
+      }
+    }
+    UfsData.run_file_pos = (file.available()) ? file.position() : -1;
+    file.close();
+    if (strlen(cmd_line)) {
+      ExecuteCommand(cmd_line, SRC_FILE);
+    }
+
+    UfsData.run_file_mutex = false;
+  }
+}
+
+bool UfsExecuteCommandFile(const char *fname) {
+  // Check for non-concurrency and file existance
+  if (UfsExecuteCommandFileReady() && TfsFileExists(fname)) {
+    snprintf(UfsData.run_file, sizeof(UfsData.run_file), fname);
+    UfsData.run_file_pos = 0;          // Signal start of file
+    return true;
+  }
+  return false;
+}
+
 /*********************************************************************************************\
  * Commands
 \*********************************************************************************************/
 
+const int UFS_FILENAME_SIZE = 48;
+
+char* UfsFilename(char* fname, char* fname_in) {
+  fname_in = Trim(fname_in);  // Remove possible leading spaces
+  snprintf_P(fname, UFS_FILENAME_SIZE, PSTR("%s%s"), ('/' == fname_in[0]) ? "" : "/", fname_in);
+  return fname;
+}
+
 const char kUFSCommands[] PROGMEM = "Ufs|"  // Prefix
-  "|Type|Size|Free|Delete";
+  "|Type|Size|Free|Delete|Rename|Run";
 
 void (* const kUFSCommand[])(void) PROGMEM = {
-  &UFSInfo, &UFSType, &UFSSize, &UFSFree, &UFSDelete};
+  &UFSInfo, &UFSType, &UFSSize, &UFSFree, &UFSDelete, &UFSRename, &UFSRun};
 
 void UFSInfo(void) {
   Response_P(PSTR("{\"Ufs\":{\"Type\":%d,\"Size\":%d,\"Free\":%d}"), ufs_type, UfsInfo(0, 0), UfsInfo(1, 0));
@@ -382,24 +472,66 @@ void UFSDelete(void) {
   // UfsDelete  sdcard or flashfs file if only one of them available
   // UfsDelete2 flashfs file if available
   if (XdrvMailbox.data_len > 0) {
+    char fname[UFS_FILENAME_SIZE];
+    UfsFilename(fname, XdrvMailbox.data);
     bool result = false;
     if (ffs_type && (ffs_type != ufs_type) && (2 == XdrvMailbox.index)) {
-      result = TfsDeleteFile(XdrvMailbox.data);
+      result = TfsDeleteFile(fname);
     } else {
-      result = (ufs_type && ufsp->remove(XdrvMailbox.data));
+      result = (ufs_type && ufsp->remove(fname));
     }
     if (!result) {
-      ResponseCmndChar(PSTR(D_JSON_FAILED));
+      ResponseCmndFailed();
     } else {
       ResponseCmndDone();
     }
   }
 }
 
+void UFSRename(void) {
+  // UfsRename  sdcard or flashfs file if only one of them available
+  // UfsRename2 flashfs file if available
+  if (XdrvMailbox.data_len > 0) {
+    bool result = false;
+    char *fname1 = strtok(XdrvMailbox.data, ",");
+    char *fname2 = strtok(nullptr, ",");
+    if (fname1 && fname2) {
+      char fname_old[UFS_FILENAME_SIZE];
+      UfsFilename(fname_old, fname1);
+      char fname_new[UFS_FILENAME_SIZE];
+      UfsFilename(fname_new, fname2);
+      if (ffs_type && (ffs_type != ufs_type) && (2 == XdrvMailbox.index)) {
+        result = TfsRenameFile(fname_old, fname_new);
+      } else {
+        result = (ufs_type && ufsp->rename(fname_old, fname_new));
+      }
+    }
+    if (!result) {
+      ResponseCmndFailed();
+    } else {
+      ResponseCmndDone();
+    }
+  }
+}
+
+void UFSRun(void) {
+  if (XdrvMailbox.data_len > 0) {
+    char fname[UFS_FILENAME_SIZE];
+    if (UfsExecuteCommandFile(UfsFilename(fname, XdrvMailbox.data))) {
+      ResponseClear();
+    } else {
+      ResponseCmndFailed();
+    }
+  } else {
+    bool not_active = UfsExecuteCommandFileReady();
+    UfsData.run_file_pos = -1;
+    ResponseCmndChar(not_active ? PSTR(D_JSON_DONE) : PSTR(D_JSON_ABORTED));
+  }
+}
+
 /*********************************************************************************************\
  * Web support
 \*********************************************************************************************/
-
 
 #ifdef USE_WEBSERVER
 
@@ -428,20 +560,45 @@ const char UFS_FORM_SDC_DIRa[] PROGMEM =
 const char UFS_FORM_SDC_DIRc[] PROGMEM =
   "</div>";
 const char UFS_FORM_FILE_UPGb[] PROGMEM =
+#ifdef GUI_EDIT_FILE
+  "<form method='get' action='ufse'><input type='hidden' file='" D_NEW_FILE "'>"
+  "<button type='submit'>" D_CREATE_NEW_FILE "</button></form>"
+#endif
   "</fieldset>"
   "</div>"
   "<div id='f2' name='f2' style='display:none;text-align:center;'><b>" D_UPLOAD_STARTED " ...</b></div>";
 const char UFS_FORM_SDC_DIRd[] PROGMEM =
   "<pre><a href='%s' file='%s'>%s</a></pre>";
 const char UFS_FORM_SDC_DIRb[] PROGMEM =
-  "<pre><a href='%s' file='%s'>%s</a> %s %8d %s</pre>";
+  "<pre><a href='%s' file='%s'>%s</a> %s %8d %s %s</pre>";
 const char UFS_FORM_SDC_HREF[] PROGMEM =
-  "http://%_I/ufsd?download=%s/%s";
+  "ufsd?download=%s/%s";
+
 #ifdef GUI_TRASH_FILE
 const char UFS_FORM_SDC_HREFdel[] PROGMEM =
-  //"<a href=http://%_I/ufsd?delete=%s/%s>&#128465;</a>";
-  "<a href=http://%_I/ufsd?delete=%s/%s>&#128293;</a>"; // 🔥
+  //"<a href=ufsd?delete=%s/%s>&#128465;</a>"; // 🗑️
+  "<a href=ufsd?delete=%s/%s onclick=\"return confirm('" D_CONFIRM_FILE_DEL "')\">&#128293;</a>"; // 🔥
 #endif // GUI_TRASH_FILE
+
+#ifdef GUI_EDIT_FILE
+
+#define FILE_BUFFER_SIZE  1024
+
+const char UFS_FORM_SDC_HREFedit[] PROGMEM =
+  "<a href=ufse?file=%s/%s>&#x1F4DD;</a>"; // 📝
+
+const char HTTP_EDITOR_FORM_START[] PROGMEM =
+  "<fieldset><legend><b>&nbsp;" D_EDIT_FILE "&nbsp;</b></legend>"
+  "<form>"
+  "<label for='name'>" D_FILE ":</label><input type='text' id='name' name='name' value='%s'><br><hr width='98%%'>"
+  "<textarea id='content' name='content' rows='8' cols='80' style='font-size: 12pt'>";
+
+const char HTTP_EDITOR_FORM_END[] PROGMEM =
+  "</textarea>"
+  "<button name='save' type='submit' formmethod='post' formenctype='multipart/form-data' formaction='/ufse' class='button bgrn'>" D_SAVE "</button>"
+  "</form></fieldset>";
+
+#endif  // #ifdef GUI_EDIT_FILE
 
 void UfsDirectory(void) {
   if (!HttpCheckPriviledgedAccess()) { return; }
@@ -504,7 +661,7 @@ void UfsDirectory(void) {
   }
   WSContentSend_P(UFS_FORM_SDC_DIRc);
   WSContentSend_P(UFS_FORM_FILE_UPGb);
-  WSContentSpaceButton(BUTTON_CONFIGURATION);
+  WSContentSpaceButton(BUTTON_MANAGEMENT);
   WSContentStop();
 
   Web.upload_file_type = UPL_UFSFILE;
@@ -520,7 +677,7 @@ void UfsListDir(char *path, uint8_t depth) {
   if (dir) {
     dir.rewindDirectory();
     if (strlen(path)>1) {
-      ext_snprintf_P(npath, sizeof(npath), PSTR("http://%_I/ufsd?download=%s"), (uint32_t)WiFi.localIP(), path);
+      ext_snprintf_P(npath, sizeof(npath), PSTR("ufsd?download=%s"), path);
       for (uint32_t cnt = strlen(npath) - 1; cnt > 0; cnt--) {
         if (npath[cnt] == '/') {
           if (npath[cnt - 1] == '=') {
@@ -562,7 +719,7 @@ void UfsListDir(char *path, uint8_t depth) {
 
         sprintf(cp, format, ep);
         if (entry.isDirectory()) {
-          ext_snprintf_P(npath, sizeof(npath), UFS_FORM_SDC_HREF, (uint32_t)WiFi.localIP(), pp, ep);
+          ext_snprintf_P(npath, sizeof(npath), UFS_FORM_SDC_HREF, pp, ep);
           WSContentSend_P(UFS_FORM_SDC_DIRd, npath, ep, name);
           uint8_t plen = strlen(path);
           if (plen > 1) {
@@ -574,13 +731,20 @@ void UfsListDir(char *path, uint8_t depth) {
         } else {
 #ifdef GUI_TRASH_FILE
           char delpath[128];
-          ext_snprintf_P(delpath, sizeof(delpath), UFS_FORM_SDC_HREFdel, (uint32_t)WiFi.localIP(), pp, ep);
+          ext_snprintf_P(delpath, sizeof(delpath), UFS_FORM_SDC_HREFdel, pp, ep);
 #else
           char delpath[2];
           delpath[0]=0;
 #endif // GUI_TRASH_FILE
-          ext_snprintf_P(npath, sizeof(npath), UFS_FORM_SDC_HREF, (uint32_t)WiFi.localIP(), pp, ep);
-          WSContentSend_P(UFS_FORM_SDC_DIRb, npath, ep, name, tstr.c_str(), entry.size(), delpath);
+#ifdef GUI_EDIT_FILE
+          char editpath[128];
+          ext_snprintf_P(editpath, sizeof(editpath), UFS_FORM_SDC_HREFedit, pp, ep);
+#else
+          char editpath[2];
+          editpath[0]=0;
+#endif // GUI_TRASH_FILE
+          ext_snprintf_P(npath, sizeof(npath), UFS_FORM_SDC_HREF, pp, ep);
+          WSContentSend_P(UFS_FORM_SDC_DIRb, npath, ep, name, tstr.c_str(), entry.size(), delpath, editpath);
         }
       }
       entry.close();
@@ -597,13 +761,13 @@ uint8_t UfsDownloadFile(char *file) {
   File download_file;
 
   if (!dfsp->exists(file)) {
-    AddLog(LOG_LEVEL_INFO, PSTR("UFS: File not found"));
+    AddLog(LOG_LEVEL_INFO, PSTR("UFS: File '%s' not found"), file);
     return 0;
   }
 
   download_file = dfsp->open(file, UFS_FILE_READ);
   if (!download_file) {
-    AddLog(LOG_LEVEL_INFO, PSTR("UFS: Could not open file"));
+    AddLog(LOG_LEVEL_INFO, PSTR("UFS: Could not open file '%s'"), file);
     return 0;
   }
 
@@ -629,7 +793,7 @@ uint8_t UfsDownloadFile(char *file) {
   }
   snprintf_P(attachment, sizeof(attachment), PSTR("attachment; filename=%s"), cp);
   Webserver->sendHeader(F("Content-Disposition"), attachment);
-  WSSend(200, CT_STREAM, "");
+  WSSend(200, CT_APP_STREAM, "");
 
   uint8_t buff[512];
   uint32_t bread;
@@ -658,12 +822,12 @@ uint8_t UfsDownloadFile(char *file) {
 #ifdef ESP32_DOWNLOAD_TASK
   download_file.close();
 
-  if (download_busy == true) {
+  if (UfsData.download_busy == true) {
     AddLog(LOG_LEVEL_INFO, PSTR("UFS: Download is busy"));
     return 0;
   }
 
-  download_busy = true;
+  UfsData.download_busy = true;
   char *path = (char*)malloc(128);
   strcpy(path,file);
   xTaskCreatePinnedToCore(donload_task, "DT", 6000, (void*)path, 3, NULL, 1);
@@ -700,7 +864,7 @@ void donload_task(void *path) {
   }
   snprintf_P(attachment, sizeof(attachment), PSTR("attachment; filename=%s"), cp);
   Webserver->sendHeader(F("Content-Disposition"), attachment);
-  WSSend(200, CT_STREAM, "");
+  WSSend(200, CT_APP_STREAM, "");
 
   uint8_t *buff = (uint8_t*)malloc(DOWNLOAD_SIZE);
   if (buff) {
@@ -714,7 +878,7 @@ void donload_task(void *path) {
   }
   download_file.close();
   download_Client.stop();
-  download_busy = false;
+  UfsData.download_busy = false;
   vTaskDelete( NULL );
 }
 #endif //  ESP32_DOWNLOAD_TASK
@@ -741,6 +905,119 @@ void UfsUploadFileClose(void) {
   ufs_upload_file.close();
 }
 
+//******************************************************************************************
+//  File Editor
+//******************************************************************************************
+
+#ifdef GUI_EDIT_FILE
+
+void UfsEditor(void) {
+  if (!HttpCheckPriviledgedAccess()) { return; }
+
+  AddLog(LOG_LEVEL_DEBUG, PSTR("UFS: UfsEditor GET"));
+
+  char fname_input[UFS_FILENAME_SIZE];
+  if (Webserver->hasArg(F("file"))) {
+    WebGetArg(PSTR("file"), fname_input, sizeof(fname_input));
+  } else {
+    snprintf_P(fname_input, sizeof(fname_input), PSTR(D_NEW_FILE));
+  }
+  char fname[UFS_FILENAME_SIZE];
+  UfsFilename(fname, fname_input);                  // Trim spaces and add slash
+
+  AddLog(LOG_LEVEL_DEBUG, PSTR("UFS: UfsEditor: file=%s, ffs_type=%d, TfsFileExist=%d"), fname, ffs_type, TfsFileExists(fname));
+
+  WSContentStart_P(PSTR(D_EDIT_FILE));
+  WSContentSendStyle();
+  char *bfname = fname +1;
+  WSContentSend_P(HTTP_EDITOR_FORM_START, bfname);  // Skip leading slash
+
+  if (ffs_type && TfsFileExists(fname)) {
+    File fp = ffsp->open(fname, "r");
+    if (!fp) {
+      AddLog(LOG_LEVEL_DEBUG, PSTR("UFS: UfsEditor: file open failed"));
+      WSContentSend_P(D_NEW_FILE);
+    } else {
+      uint8_t *buf = (uint8_t*)malloc(FILE_BUFFER_SIZE+1);
+      size_t filelen = fp.size();
+      AddLog(LOG_LEVEL_DEBUG, PSTR("UFS: UfsEditor: file len=%d"), filelen);
+      while (filelen > 0) {
+        size_t l = fp.read(buf, FILE_BUFFER_SIZE);
+        AddLog(LOG_LEVEL_DEBUG_MORE, PSTR("UFS: UfsEditor: read=%d"), l);
+        if (l < 0) { break; }
+        buf[l] = '\0';
+        WSContentSend_P(PSTR("%s"), buf);
+        filelen -= l;
+      }
+      fp.close();
+      free(buf);
+      AddLog(LOG_LEVEL_DEBUG, PSTR("UFS: UfsEditor: read done"));
+    }
+  } else {
+    WSContentSend_P(D_NEW_FILE);
+  }
+
+  WSContentSend_P(HTTP_EDITOR_FORM_END);
+  WSContentSend_P(UFS_WEB_DIR, PSTR(D_MANAGE_FILE_SYSTEM));
+  WSContentStop();
+}
+
+void UfsEditorUpload(void) {
+  AddLog(LOG_LEVEL_DEBUG, PSTR("UFS: UfsEditor: file upload"));
+
+  if (!HttpCheckPriviledgedAccess()) { return; }
+
+  if (!Webserver->hasArg("name")) {
+    AddLog(LOG_LEVEL_ERROR, PSTR("UFS: UfsEditor: file upload - no filename"));
+    WSSend(400, CT_PLAIN, F("400: Bad request - no filename"));
+    return;
+  }
+
+  char fname_input[UFS_FILENAME_SIZE];
+  WebGetArg(PSTR("name"), fname_input, sizeof(fname_input));
+  char fname[UFS_FILENAME_SIZE];
+  UfsFilename(fname, fname_input);                  // Trim spaces and add slash
+  AddLog(LOG_LEVEL_DEBUG, PSTR("UFS: UfsEditor: file '%s'"), fname);
+
+  if (!Webserver->hasArg("content")) {
+    AddLog(LOG_LEVEL_ERROR, PSTR("UFS: UfsEditor: file upload - no content"));
+    WSSend(400, CT_PLAIN, F("400: Bad request - no content"));
+    return;
+  }
+  String content = Webserver->arg("content");
+
+  if (!ffsp) {
+    Web.upload_error = 1;
+    AddLog(LOG_LEVEL_ERROR, PSTR("UFS: UfsEditor: 507: no storage available"));
+    WSSend(507, CT_PLAIN, F("507: no storage available"));
+    return;
+  }
+
+  File fp = ffsp->open(fname, "w");
+  if (!fp) {
+    Web.upload_error = 1;
+    AddLog(LOG_LEVEL_ERROR, PSTR("UFS: UfsEditor: 400: invalid file name '%s'"), fname);
+    WSSend(400, CT_PLAIN, F("400: bad request - invalid filename"));
+    return;
+  }
+
+  if (*content.c_str()) {
+    content.replace("\r\n", "\n");
+    content.replace("\r", "\n");
+  }
+
+  if (!fp.print(content)) {
+    AddLog(LOG_LEVEL_ERROR, PSTR("UFS: UfsEditor: write error on '%s'"), fname);
+  }
+
+  fp.close();
+
+  Webserver->sendHeader(F("Location"),F("/ufsu"));
+  Webserver->send(303);
+}
+
+#endif  // GUI_EDIT_FILE
+
 #endif  // USE_WEBSERVER
 
 /*********************************************************************************************\
@@ -751,24 +1028,43 @@ bool Xdrv50(uint8_t function) {
   bool result = false;
 
   switch (function) {
+    case FUNC_LOOP:
+      UfsExecuteCommandFileLoop();
+      break;
 #ifdef USE_SDCARD
     case FUNC_PRE_INIT:
       UfsCheckSDCardInit();
       break;
 #endif // USE_SDCARD
+    case FUNC_MQTT_INIT:
+      if (!TasmotaGlobal.no_autoexec) {
+        UfsExecuteCommandFile(TASM_FILE_AUTOEXEC);
+      }
+      break;
     case FUNC_COMMAND:
       result = DecodeCommand(kUFSCommands, kUFSCommand);
       break;
 #ifdef USE_WEBSERVER
     case FUNC_WEB_ADD_MANAGEMENT_BUTTON:
       if (ufs_type) {
-        WSContentSend_PD(UFS_WEB_DIR, PSTR(D_MANAGE_FILE_SYSTEM));
+        if (XdrvMailbox.index) {
+          XdrvMailbox.index++;
+        } else {
+          WSContentSend_PD(UFS_WEB_DIR, PSTR(D_MANAGE_FILE_SYSTEM));
+        }
       }
       break;
     case FUNC_WEB_ADD_HANDLER:
-      Webserver->on(F("/ufsd"), UfsDirectory);
-      Webserver->on(F("/ufsu"), HTTP_GET, UfsDirectory);
-      Webserver->on(F("/ufsu"), HTTP_POST,[](){Webserver->sendHeader(F("Location"),F("/ufsu"));Webserver->send(303);}, HandleUploadLoop);
+//      Webserver->on(F("/ufsd"), UfsDirectory);
+//      Webserver->on(F("/ufsu"), HTTP_GET, UfsDirectory);
+//      Webserver->on(F("/ufsu"), HTTP_POST,[](){Webserver->sendHeader(F("Location"),F("/ufsu"));Webserver->send(303);}, HandleUploadLoop);
+      Webserver->on("/ufsd", UfsDirectory);
+      Webserver->on("/ufsu", HTTP_GET, UfsDirectory);
+      Webserver->on("/ufsu", HTTP_POST,[](){Webserver->sendHeader(F("Location"),F("/ufsu"));Webserver->send(303);}, HandleUploadLoop);
+#ifdef GUI_EDIT_FILE
+      Webserver->on("/ufse", HTTP_GET, UfsEditor);
+      Webserver->on("/ufse", HTTP_POST, UfsEditorUpload);
+#endif
       break;
 #endif // USE_WEBSERVER
   }

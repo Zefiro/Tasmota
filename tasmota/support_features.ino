@@ -364,7 +364,7 @@ void ResponseAppendFeatures(void)
 #if defined(USE_ENERGY_SENSOR) && defined(USE_PZEM_DC)
     feature4 |= 0x00001000;  // xnrg_06_pzem_dc.ino
 #endif
-#if defined(USE_TX20_WIND_SENSOR) || defined(USE_TX23_WIND_SENSOR)
+#if defined(USE_TX20_WIND_SENSOR) || defined(USE_TX23_WIND_SENSOR) || defined(USE_WS2300_WIND_SENSOR)
     feature4 |= 0x00002000;  // xsns_35_tx20.ino
 #endif
 #if defined(USE_I2C) && defined(USE_MGC3130)
@@ -712,30 +712,62 @@ void ResponseAppendFeatures(void)
 #if defined(USE_I2C) && defined(USE_TOF10120)
     feature7 |= 0x10000000;  // xsns_84_tof10120
 #endif
-//    feature7 |= 0x20000000;
-//    feature7 |= 0x40000000;
-//    feature7 |= 0x80000000;
+#if defined(USE_ENERGY_SENSOR) && defined(USE_SDM72)
+    feature7 |= 0x20000000;  // xnrg_18_sdm72.ino
+#endif
+#if defined(USE_DISPLAY) && defined(USE_DISPLAY_TM1637)
+    feature7 |= 0x40000000;
+#endif
+#ifdef USE_PROJECTOR_CTRL
+    feature7 |= 0x80000000;  // xdrv_53_projector_ctrl.ino
+#endif
   }
 
   static uint32_t feature8 = 0x00000000;
   if (!feature8) {           // Only fill this once
-//    feature8 |= 0x00000001;
-//    feature8 |= 0x00000002;
-//    feature8 |= 0x00000004;
-//    feature8 |= 0x00000008;
+#if defined(USE_I2C) && defined(USE_MPU_ACCEL)
+    feature8 |= 0x00000001;  // xsns_85_mpu6886.ino
+#endif
+#ifdef USE_TFMINIPLUS
+    feature8 |= 0x00000002;  // xsns_86_tfminiplus.ino
+#endif
+#if defined(USE_ENERGY_SENSOR) && defined(USE_CSE7761)
+    feature8 |= 0x00000004;  // xnrg_19_cse7761.ino
+#endif
+#ifdef USE_BERRY
+    feature8 |= 0x00000008;  // xdrv_52_9_berry.ino
+#endif
+#if defined(USE_I2C) && defined(USE_BM8563)
+    feature8 |= 0x00000010;  // xdrv_56_BM8563_RTC.ino
+#endif
+#if defined(USE_ENERGY_SENSOR) && defined(USE_ENERGY_DUMMY)
+    feature8 |= 0x00000020;  // xnrg_20_dummy.ino
+#endif
+#if defined(USE_I2C) && defined(USE_AM2320)
+    feature8 |= 0x00000040;  // xsns_88_am2320.ino
+#endif
+#if defined(USE_I2C) && defined(USE_T67XX)
+    feature8 |= 0x00000080;  // xsns_89_t67xx.ino
+#endif
 
-//    feature8 |= 0x00000010;
-//    feature8 |= 0x00000020;
-//    feature8 |= 0x00000040;
-//    feature8 |= 0x00000080;
-
-//    feature8 |= 0x00000100;
-//    feature8 |= 0x00000200;
-//    feature8 |= 0x00000400;
-//    feature8 |= 0x00000800;
-
-//    feature8 |= 0x00001000;
-//    feature8 |= 0x00002000;
+#if defined(USE_SPI) && defined(USE_MCP2515)
+    feature8 |= 0x00000100;  // xsns_87_mcp2515.ino
+#endif
+#ifdef USE_TASMESH
+    feature8 |= 0x00000200;  // xdrv_57_9_tasmesh.ino
+#endif
+#ifdef USE_WIFI_RANGE_EXTENDER
+    feature8 |= 0x00000400;  // xdrv_58_range_extender.ino
+#endif
+#ifdef USE_INFLUXDB
+    feature8 |= 0x00000800;  // xdrv_59_influxdb.ino
+#endif
+#ifdef USE_HRG15
+    feature8 |= 0x00001000;  // xsns_90_hrg15.ino
+#endif
+#ifdef USE_VINDRIKTNING
+    feature8 |= 0x00002000;  // xsns_91_vindriktning.ino
+#endif
 //    feature8 |= 0x00004000;
 //    feature8 |= 0x00008000;
 

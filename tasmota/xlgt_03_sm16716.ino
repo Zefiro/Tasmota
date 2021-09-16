@@ -31,9 +31,9 @@
 #define D_LOG_SM16716       "SM16716: "
 
 struct SM16716 {
-  uint8_t pin_clk = 0;
-  uint8_t pin_dat = 0;
-  uint8_t pin_sel = 0;
+  int8_t pin_clk = 0;
+  int8_t pin_dat = 0;
+  int8_t pin_sel = 0;
   bool enabled = false;
 } Sm16716;
 
@@ -62,7 +62,7 @@ void SM16716_SendByte(uint8_t v)
 
 void SM16716_Update(uint8_t duty_r, uint8_t duty_g, uint8_t duty_b)
 {
-  if (Sm16716.pin_sel < 99) {
+  if (Sm16716.pin_sel >= 0) {
     bool should_enable = (duty_r | duty_g | duty_b);
     if (!Sm16716.enabled && should_enable) {
       DEBUG_DRIVER_LOG(PSTR(D_LOG_SM16716 "turning color on"));
@@ -104,7 +104,7 @@ bool SM16716_ModuleSelected(void)
   Sm16716.pin_dat = Pin(GPIO_SM16716_DAT);
   Sm16716.pin_sel = Pin(GPIO_SM16716_SEL);
   DEBUG_DRIVER_LOG(PSTR(D_LOG_SM16716 "ModuleSelected; clk_pin=%d, dat_pin=%d)"), Sm16716.pin_clk, Sm16716.pin_dat);
-  return (Sm16716.pin_clk < 99) && (Sm16716.pin_dat < 99);
+  return (Sm16716.pin_clk >= 0) && (Sm16716.pin_dat >= 0);
 }
 */
 
@@ -124,7 +124,7 @@ bool Sm16716SetChannels(void)
   for (uint32_t i = 3; i < Light.subtype; i++) {
     if (PinUsed(GPIO_PWM1, i-3)) {
       //AddLog(LOG_LEVEL_DEBUG, PSTR(D_LOG_APPLICATION "Cur_Col%d 10 bits %d, Pwm%d %d"), i, cur_col[i], i+1, curcol);
-      analogWrite(Pin(GPIO_PWM1, i-3), bitRead(TasmotaGlobal.pwm_inverted, i-3) ? Settings.pwm_range - cur_col_10bits[i] : cur_col_10bits[i]);
+      analogWrite(Pin(GPIO_PWM1, i-3), bitRead(TasmotaGlobal.pwm_inverted, i-3) ? Settings->pwm_range - cur_col_10bits[i] : cur_col_10bits[i]);
     }
   }
 */
@@ -146,7 +146,7 @@ void Sm16716ModuleSelected(void)
 /*
     // init PWM
     for (uint32_t i = 0; i < Light.subtype; i++) {
-      Settings.pwm_value[i] = 0;        // Disable direct PWM control
+      Settings->pwm_value[i] = 0;        // Disable direct PWM control
       if (PinUsed(GPIO_PWM1, i)) {
 #ifdef ESP8266
         pinMode(Pin(GPIO_PWM1, i), OUTPUT);
@@ -165,7 +165,7 @@ void Sm16716ModuleSelected(void)
     pinMode(Sm16716.pin_dat, OUTPUT);
     digitalWrite(Sm16716.pin_dat, LOW);
 
-    if (Sm16716.pin_sel < 99) {
+    if (Sm16716.pin_sel >= 0) {
       pinMode(Sm16716.pin_sel, OUTPUT);
       digitalWrite(Sm16716.pin_sel, LOW);
       // no need to call SM16716_Init here, it will be called after sel goes HIGH

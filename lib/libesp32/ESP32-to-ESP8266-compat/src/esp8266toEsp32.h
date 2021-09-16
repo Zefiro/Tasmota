@@ -32,12 +32,21 @@
  * ESP32 analogWrite emulation support
 \*********************************************************************************************/
 
-#define PWM_SUPPORTED_CHANNELS 8
-#define PWM_CHANNEL_OFFSET     2   // Webcam uses channel 0, so we offset standard PWM
+#if CONFIG_IDF_TARGET_ESP32C3
+  #define PWM_SUPPORTED_CHANNELS 6
+  #define PWM_CHANNEL_OFFSET     1   // Webcam uses channel 0, so we offset standard PWM
 
-uint8_t _pwm_channel[PWM_SUPPORTED_CHANNELS] = { 99, 99, 99, 99, 99, 99, 99, 99 };
-uint32_t _pwm_frequency = 977;     // Default 977Hz
-uint8_t _pwm_bit_num = 10;         // Default 1023
+  uint8_t _pwm_channel[PWM_SUPPORTED_CHANNELS] = { 99, 99, 99, 99, 99, 99 };
+  uint32_t _pwm_frequency = 977;     // Default 977Hz
+  uint8_t _pwm_bit_num = 10;         // Default 1023
+#else // other ESP32
+  #define PWM_SUPPORTED_CHANNELS 8
+  #define PWM_CHANNEL_OFFSET     2   // Webcam uses channel 0, so we offset standard PWM
+
+  uint8_t _pwm_channel[PWM_SUPPORTED_CHANNELS] = { 99, 99, 99, 99, 99, 99, 99, 99 };
+  uint32_t _pwm_frequency = 977;     // Default 977Hz
+  uint8_t _pwm_bit_num = 10;         // Default 1023
+#endif // CONFIG_IDF_TARGET_ESP32C3 vs ESP32
 
 inline uint32_t _analog_pin2chan(uint32_t pin) {
   for (uint32_t channel = 0; channel < PWM_SUPPORTED_CHANNELS; channel++) {
@@ -89,6 +98,7 @@ inline void analogAttach(uint32_t pin, uint32_t channel) {
 inline void analogWrite(uint8_t pin, int val)
 {
   uint32_t channel = _analog_pin2chan(pin);
+  if ( val >> (_pwm_bit_num-1) ) ++val;
   ledcWrite(channel + PWM_CHANNEL_OFFSET, val);
 //  Serial.printf("write %d - %d\n",channel,val);
 }
@@ -114,10 +124,6 @@ typedef int SerConfu8;
 typedef int SerialConfig;
 //#define analogWrite(a, b)
 
-//
-// WS2812
-//
-#define NeoEsp8266BitBang800KbpsMethod NeoEsp32BitBang800KbpsMethod
 //
 // UDP
 //

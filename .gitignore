@@ -1,7 +1,13 @@
 ## OS specific ########
 .DS_Store
 .fuse_hidden*
+
+## Compilation artefacts ########
 *.pyc
+*.d
+*.o
+*.gcno
+*.gcda
 
 ## Project files ######
 .platformio
@@ -20,6 +26,7 @@ tasmota/tasmota.ino.cpp
 tasmota*.bin
 tasmota*.bin.gz
 tasmota*.map
+tasmota*.map.gz
 platformio_override.ini
 platformio_tasmota_cenv.ini
 

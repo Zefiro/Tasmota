@@ -140,8 +140,8 @@ void DS3231EverySecond(void)
       ds3231ReadStatus = true; //if time in DS3231 is valid, do  not update again
     }
     RtcTime.year = tmpTime.year + 1970;
-    Rtc.daylight_saving_time = RuleToTime(Settings.tflag[1], RtcTime.year);
-    Rtc.standard_time = RuleToTime(Settings.tflag[0], RtcTime.year);
+    Rtc.daylight_saving_time = RuleToTime(Settings->tflag[1], RtcTime.year);
+    Rtc.standard_time = RuleToTime(Settings->tflag[0], RtcTime.year);
     AddLog(LOG_LEVEL_INFO, PSTR("Set time from DS3231 to RTC (" D_UTC_TIME ") %s, (" D_DST_TIME ") %s, (" D_STD_TIME ") %s"),
                 GetDateAndTime(DT_UTC).c_str(), GetDateAndTime(DT_DST).c_str(), GetDateAndTime(DT_STD).c_str());
     if (Rtc.local_time < START_VALID_TIME) {  // 2016-01-01
@@ -150,7 +150,7 @@ void DS3231EverySecond(void)
       TasmotaGlobal.rules_flag.time_set = 1;
     }
   }
-  else if (!ds3231WriteStatus && Rtc.utc_time > START_VALID_TIME && abs(Rtc.utc_time - ReadFromDS3231()) > 60) {//if time is valid and is drift from RTC in more that 60 second
+  else if (!ds3231WriteStatus && Rtc.utc_time > START_VALID_TIME && abs((int32_t)(Rtc.utc_time - ReadFromDS3231())) > 60) {  // If time is valid and is drift from RTC in more that 60 second
     AddLog(LOG_LEVEL_INFO, PSTR("Write Time TO DS3231 from NTP (" D_UTC_TIME ") %s, (" D_DST_TIME ") %s, (" D_STD_TIME ") %s"),
                 GetDateAndTime(DT_UTC).c_str(), GetDateAndTime(DT_DST).c_str(), GetDateAndTime(DT_STD).c_str());
     SetDS3231Time (Rtc.utc_time); //update the DS3231 time

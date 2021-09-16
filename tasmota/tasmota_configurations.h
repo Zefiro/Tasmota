@@ -122,7 +122,7 @@
 #define USE_INA219                             // [I2cDriver14] Enable INA219 (I2C address 0x40, 0x41 0x44 or 0x45) Low voltage and current sensor (+1k code)
 //#define USE_INA226                             // [I2cDriver35] Enable INA226 (I2C address 0x40, 0x41 0x44 or 0x45) Low voltage and current sensor (+2k3 code)
 #define USE_SHT3X                              // [I2cDriver15] Enable SHT3x (I2C address 0x44 or 0x45) or SHTC3 (I2C address 0x70) sensor (+0k7 code)
-#define USE_TSL2561                            // [I2cDriver16] Enable TSL2561 sensor (I2C address 0x29, 0x39 or 0x49) using library Joba_Tsl2561 (+2k3 code)
+//#define USE_TSL2561                            // [I2cDriver16] Enable TSL2561 sensor (I2C address 0x29, 0x39 or 0x49) using library Joba_Tsl2561 (+2k3 code)
 //#define USE_TSL2591                            // [I2cDriver40] Enable TSL2591 sensor (I2C address 0x29) using library Adafruit_TSL2591 (+1k6 code)
 #define USE_MGS                                // [I2cDriver17] Enable Xadow and Grove Mutichannel Gas sensor using library Multichannel_Gas_Sensor (+10k code)
 #define USE_SGP30                              // [I2cDriver18] Enable SGP30 sensor (I2C address 0x58) (+1k1 code)
@@ -133,6 +133,7 @@
 //#define USE_PCA9685                            // [I2cDriver1] Enable PCA9685 I2C HW PWM Driver - Must define I2C Address in #define USE_PCA9685_ADDR below - range 0x40 - 0x47 (+1k4 code)
 //#define USE_MPR121                             // [I2cDriver23] Enable MPR121 controller (I2C addresses 0x5A, 0x5B, 0x5C and 0x5D) in input mode for touch buttons (+1k3 code)
 #define USE_CCS811                             // [I2cDriver24] Enable CCS811 sensor (I2C address 0x5A) (+2k2 code)
+//#define USE_CCS811_V2                          // [I2cDriver24] Enable CCS811 sensor (I2C addresses 0x5A and 0x5B) (+2k8 code)
 //#define USE_MPU6050                            // [I2cDriver25] Enable MPU6050 sensor (I2C address 0x68 AD0 low or 0x69 AD0 high) (+3K3 of code and 188 Bytes of RAM)
 //#define USE_DS3231                             // [I2cDriver26] Enable DS3231 external RTC in case no Wifi is avaliable. See docs in the source file (+1k2 code)
 //#define USE_MGC3130                            // [I2cDriver27] Enable MGC3130 Electric Field Effect Sensor (I2C address 0x42) (+2k7 code, 0k3 mem)
@@ -140,7 +141,7 @@
 #define USE_SCD30                              // [I2cDriver29] Enable Sensiron SCd30 CO2 sensor (I2C address 0x61) (+3k3 code)
 //#define USE_SPS30                              // [I2cDriver30] Enable Sensiron SPS30 particle sensor (I2C address 0x69) (+1.7 code)
 #define USE_ADE7953                            // [I2cDriver7] Enable ADE7953 Energy monitor as used on Shelly 2.5 (I2C address 0x38) (+1k5)
-//#define USE_VL53L0X                            // [I2cDriver31] Enable VL53L0x time of flight sensor (I2C address 0x29) (+4k code)
+#define USE_VL53L0X                            // [I2cDriver31] Enable VL53L0x time of flight sensor (I2C address 0x29) (+4k code)
 //#define USE_VL53L1X                            // [I2cDriver54] Enable VL53L1X time of flight sensor (I2C address 0x29) using Pololu VL53L1X library (+2k9 code)
 //#define USE_TOF10120                           // [I2cDriver57] Enable TOF10120 time of flight sensor (I2C address 0x52) (+0k6 code)
 //#define USE_MLX90614                           // [I2cDriver32] Enable MLX90614 ir temp sensor (I2C address 0x5a) (+0.6k code)
@@ -174,6 +175,10 @@
 //#define USE_EZORGB                             // [I2cDriver55] Enable support for EZO's RGB sensor (+0k5 code) - Shared EZO code required for any EZO device (+1k2 code)
 //#define USE_EZOPMP                             // [I2cDriver55] Enable support for EZO's PMP sensor (+0k3 code) - Shared EZO code required for any EZO device (+1k2 code)
 //#define USE_SEESAW_SOIL                        // [I2cDriver56] Enable Capacitice Soil Moisture & Temperature Sensor (I2C addresses 0x36 - 0x39) (+1k3 code)
+//#define USE_MPU_ACCEL                          // [I2cDriver58] Enable MPU6886/MPU9250 - found in M5Stack - support both I2C buses on ESP32 (I2C address 0x68) (+2k code)
+//#define USE_BM8563                             // [I2cDriver59] Enable BM8563 RTC - found in M5Stack - support both I2C buses on ESP32 (I2C address 0x51) (+2k5 code)
+//#define USE_AM2320                             // [I2cDriver60] Enable AM2320 temperature and humidity Sensor (I2C address 0x5C) (+1k code)
+//#define USE_T67XX                              // [I2cDriver61] Enable Telaire T67XX CO2 sensor (I2C address 0x15) (+1k3 code)
 
 //#define USE_SPI                                // Hardware SPI using GPIO12(MISO), GPIO13(MOSI) and GPIO14(CLK) in addition to two user selectable GPIOs(CS and DC)
 //#define USE_RC522                              // Add support for MFRC522 13.56Mhz Rfid reader (+6k code)
@@ -203,20 +208,26 @@
 //#define USE_GPS                                  // Add support for GPS and NTP Server for becoming Stratus 1 Time Source (+ 3.1kb flash, +132 bytes RAM)
 #define USE_HM10                                 // (ESP8266 only) Add support for HM-10 as a BLE-bridge for the LYWSD03 (+5k1 code)
 #ifdef ESP32
-  #define USE_BLE_ESP32                            // (ESP32 only) Add support for native BLE on ESP32 - use new driver 
-  #define USE_MI_ESP32                             // (ESP32 only) Add support for ESP32 as a BLE-bridge (+9k2 mem, +292k flash)
+//  #define USE_BLE_ESP32                            // (ESP32 only) Add support for native BLE on ESP32 - use new driver
+//  #define USE_MI_ESP32                             // (ESP32 only) Add support for ESP32 as a BLE-bridge (+9k2 mem, +292k flash)
 #endif
 #define USE_HRXL                                 // Add support for MaxBotix HRXL-MaxSonar ultrasonic range finders (+0k7)
 //#define USE_TASMOTA_CLIENT                       // Add support for Arduino Uno/Pro Mini via serial interface including flashing (+2k3 code, 44 mem)
 //#define USE_OPENTHERM                            // Add support for OpenTherm (+15k code)
 //#define USE_MIEL_HVAC                            // Add support for Mitsubishi Electric HVAC serial interface (+5k code)
+//#define USE_PROJECTOR_CTRL                       // Add support for LCD/DLP Projector serial control interface (+2k code)
+//  #define USE_PROJECTOR_CTRL_NEC                 // Use codes for NEC
+//  #define USE_PROJECTOR_CTRL_OPTOMA              // Use codes for OPTOMA
 //#define USE_AS608                                // Add support for AS608 optical and R503 capacitive fingerprint sensor (+3k4 code)
+//#define USE_TFMINIPLUS                           // Add suppoer for TFmini Plus (TFmini, TFmini-S) LiDAR modules via UART interface
+//#define USE_HRG15                                // Add support for Hydreon RG-15 Solid State Rain sensor (+1k5 code)
 
 #define USE_ENERGY_SENSOR                        // Add energy sensors (-14k code)
 #define USE_PZEM004T                             // Add support for PZEM004T Energy monitor (+2k code)
 #define USE_PZEM_AC                              // Add support for PZEM014,016 Energy monitor (+1k1 code)
 #define USE_PZEM_DC                              // Add support for PZEM003,017 Energy monitor (+1k1 code)
 #define USE_MCP39F501                            // Add support for MCP39F501 Energy monitor as used in Shelly 2 (+3k1 code)
+#define USE_SDM72                                // Add support for Eastron SDM72-Modbus energy monitor (+0k3 code)
 #define USE_SDM120                               // Add support for Eastron SDM120-Modbus energy monitor (+1k1 code)
 #define USE_SDM630                               // Add support for Eastron SDM630-Modbus energy monitor (+0k6 code)
 #define USE_DDS2382                              // Add support for Hiking DDS2382 Modbus energy monitor (+0k6 code)
@@ -268,7 +279,7 @@
 #undef USE_EMULATION_WEMO                        // Disable Belkin WeMo emulation for Alexa (+6k code, +2k mem common)
 #undef USE_DEEPSLEEP                             // Disable support for deepsleep (+1k code)
 #undef USE_DEVICE_GROUPS                         // Disable support for device groups (+3k5 code)
-#undef USE_BLE_ESP32                             // (ESP32 only) Disable support for native BLE on ESP32 - use new driver 
+#undef USE_BLE_ESP32                             // (ESP32 only) Disable support for native BLE on ESP32 - use new driver
 #undef USE_MI_ESP32                              // (ESP32 only) Disable support for ESP32 as a BLE-bridge (+9k2 mem, +292k flash)
 
 #undef USE_PWM_DIMMER_REMOTE                     // Disbale support for remote switches to PWM Dimmer
@@ -291,6 +302,7 @@
 #undef USE_EMULATION_WEMO                        // Disable Belkin WeMo emulation for Alexa (+6k code, +2k mem common)
 #undef USE_DOMOTICZ                              // Disable Domoticz
 #undef USE_HOME_ASSISTANT                        // Disable Home Assistant
+#define USE_TASMOTA_DISCOVERY                    // Enable Tasmota Discovery support (+2k code)
 
 // -- Optional modules ----------------------------
 #undef ROTARY_V1                                 // Disable support for MI Desk Lamp
@@ -319,6 +331,7 @@
   #undef USE_PZEM_AC                             // Disable PZEM014,016 Energy monitor
   #undef USE_PZEM_DC                             // Disable PZEM003,017 Energy monitor
   #undef USE_MCP39F501                           // Disable MCP39F501 Energy monitor as used in Shelly 2
+  #undef USE_SDM72                               // Disable support for Eastron SDM72-Modbus energy meter
   #undef USE_SDM120                              // Disable support for Eastron SDM120-Modbus energy meter
   #undef USE_SDM630                              // Disable support for Eastron SDM630-Modbus energy monitor (+0k6 code)
   #undef USE_DDS2382                             // Disable support for Hiking DDS2382 Modbus energy monitor (+0k6 code)
@@ -328,28 +341,30 @@
   #undef USE_TELEINFO                            // Disable support for French Energy Provider metering telemetry
   #undef USE_IEM3000                             // Disable support for Schneider Electric iEM3000-Modbus series energy monitor (+0k8 code)
   #undef USE_WE517                               // Disable support for Orno WE517-Modbus energy monitor (+1k code)
-#undef USE_BLE_ESP32                             // (ESP32 only) Disable support for native BLE on ESP32 - use new driver 
+#undef USE_BLE_ESP32                             // (ESP32 only) Disable support for native BLE on ESP32 - use new driver
 #undef USE_MI_ESP32                              // (ESP32 only) Disable support for ESP32 as a BLE-bridge (+9k2 mem, +292k flash)
 
+#define USE_DISPLAY                              // Add Display Support (+2k code)
+  #define USE_DISPLAY_TM1637                     // [DisplayModel 15] Enable TM1637 module
+  #define USE_DISPLAY_MAX7219                    // [DisplayModel 16] Enable MAX7219 7-segment module
 
 #define USE_I2C                                  // I2C using library wire (+10k code, 0k2 mem, 124 iram)
-  #define USE_DISPLAY                            // Add I2C Display Support (+2k code)
-    #define USE_DISPLAY_MODES1TO5                // Enable display mode 1 to 5 in addition to mode 0
-    #define USE_DISPLAY_LCD                      // [DisplayModel 1] Enable Lcd display (I2C addresses 0x27 and 0x3F) (+6k code)
-    #define USE_DISPLAY_SSD1306                  // [DisplayModel 2] Enable SSD1306 Oled 128x64 display (I2C addresses 0x3C and 0x3D) (+16k code)
-    #define USE_DISPLAY_MATRIX                   // [DisplayModel 3] Enable 8x8 Matrix display (I2C adresseses see below) (+11k code)
-    #define USE_DISPLAY_SEVENSEG                 // [DisplayModel 11] [I2cDriver47] Enable sevenseg display (I2C addresses 0x70 - 0x77) (<+11k code)
-    #define USE_DISPLAY_SH1106                   // [DisplayModel 7] Enable SH1106 Oled 128x64 display (I2C addresses 0x3C and 0x3D)
+  #define USE_DISPLAY_MODES1TO5                  // Enable display mode 1 to 5 in addition to mode 0
+  #define USE_DISPLAY_LCD                        // [DisplayModel 1] Enable Lcd display (I2C addresses 0x27 and 0x3F) (+6k code)
+  #define USE_DISPLAY_SSD1306                    // [DisplayModel 2] Enable SSD1306 Oled 128x64 display (I2C addresses 0x3C and 0x3D) (+16k code)
+  #define USE_DISPLAY_MATRIX                     // [DisplayModel 3] Enable 8x8 Matrix display (I2C adresseses see below) (+11k code)
+  #define USE_DISPLAY_SEVENSEG                   // [DisplayModel 11] [I2cDriver47] Enable sevenseg display (I2C addresses 0x70 - 0x77) (<+11k code)
+  #define USE_DISPLAY_SH1106                     // [DisplayModel 7] Enable SH1106 Oled 128x64 display (I2C addresses 0x3C and 0x3D)
 
 #define USE_SPI                                  // Hardware SPI using GPIO12(MISO), GPIO13(MOSI) and GPIO14(CLK) in addition to two user selectable GPIOs(CS and DC)
-    #define USE_DISPLAY_ILI9341                  // [DisplayModel 4] Enable ILI9341 Tft 480x320 display (+19k code)
-    #define USE_DISPLAY_EPAPER_29                // [DisplayModel 5] Enable e-paper 2.9 inch display (+19k code)
-    #define USE_DISPLAY_EPAPER_42                // [DisplayModel 6] Enable e-paper 4.2 inch display
-    #define USE_DISPLAY_ILI9488                  // [DisplayModel 8]
-    #define USE_DISPLAY_SSD1351                  // [DisplayModel 9]
-    #define USE_DISPLAY_RA8876                   // [DisplayModel 10]
-    #define USE_DISPLAY_ST7789                   // [DisplayModel 12] Enable ST7789 module
-    #define USE_DISPLAY_SSD1331                  // [DisplayModel 14] Enable SSD1331 module
+  #define USE_DISPLAY_ILI9341                    // [DisplayModel 4] Enable ILI9341 Tft 480x320 display (+19k code)
+  #define USE_DISPLAY_EPAPER_29                  // [DisplayModel 5] Enable e-paper 2.9 inch display (+19k code)
+  #define USE_DISPLAY_EPAPER_42                  // [DisplayModel 6] Enable e-paper 4.2 inch display
+  #define USE_DISPLAY_ILI9488                    // [DisplayModel 8]
+  #define USE_DISPLAY_SSD1351                    // [DisplayModel 9]
+  #define USE_DISPLAY_RA8876                     // [DisplayModel 10]
+  #define USE_DISPLAY_ST7789                     // [DisplayModel 12] Enable ST7789 module
+  #define USE_DISPLAY_SSD1331                    // [DisplayModel 14] Enable SSD1331 module
 
 #undef DEBUG_THEO                                // Disable debug code
 #undef USE_DEBUG_DRIVER                          // Disable debug code
@@ -378,6 +393,10 @@
 //#undef USE_SUNRISE                               // Disable support for Sunrise and sunset tools
 //#undef USE_RULES                                 // Disable support for rules
 #undef USE_DISCOVERY                             // Disable mDNS for the following services (+8k code or +23.5k code with core 2_5_x, +0.3k mem)
+
+// -- IR options ----------------------------
+#define USE_IR_REMOTE                            // Enable IR remote commands using library IRremoteESP8266
+#define USE_IR_REMOTE_FULL                       // Support all IR protocols from IRremoteESP8266
 
 // -- Optional modules ----------------------------
 #undef ROTARY_V1                                 // Disable support for MI Desk Lamp
@@ -420,6 +439,7 @@
   #undef USE_PZEM_AC                             // Disable PZEM014,016 Energy monitor
   #undef USE_PZEM_DC                             // Disable PZEM003,017 Energy monitor
   #undef USE_MCP39F501                           // Disable MCP39F501 Energy monitor as used in Shelly 2
+  #undef USE_SDM72                               // Disable support for Eastron SDM72-Modbus energy meter
   #undef USE_SDM120                              // Disable support for Eastron SDM120-Modbus energy meter
   #undef USE_SDM630                              // Disable support for Eastron SDM630-Modbus energy monitor (+0k6 code)
   #undef USE_DDS2382                             // Disable support for Hiking DDS2382 Modbus energy monitor (+0k6 code)
@@ -453,12 +473,13 @@
 #undef USE_IBEACON                               // Disable support for bluetooth LE passive scan of ibeacon devices (uses HM17 module)
 #undef USE_GPS                                   // Disable support for GPS and NTP Server for becoming Stratus 1 Time Source (+ 3.1kb flash, +132 bytes RAM)
 #undef USE_HM10                                  // (ESP8266 only) Disable support for HM-10 as a BLE-bridge for the LYWSD03 (+5k1 code)
-#undef USE_BLE_ESP32                             // (ESP32 only) Disable support for native BLE on ESP32 - use new driver 
+#undef USE_BLE_ESP32                             // (ESP32 only) Disable support for native BLE on ESP32 - use new driver
 #undef USE_MI_ESP32                              // (ESP32 only) Disable support for ESP32 as a BLE-bridge (+9k2 mem, +292k flash)
 #undef USE_HRXL                                  // Disable support for MaxBotix HRXL-MaxSonar ultrasonic range finders (+0k7)
 #undef USE_TASMOTA_CLIENT                        // Disable support for Arduino Uno/Pro Mini via serial interface including flashing (+2k3 code, 44 mem)
 #undef USE_OPENTHERM                             // Disable support for OpenTherm (+15k code)
 #undef USE_MIEL_HVAC                             // Disable support for Mitsubishi Electric HVAC serial interface (+5k code)
+#undef USE_PROJECTOR_CTRL                        // Disable support for LCD/DLP Projector serial control interface
 
 #undef USE_DHT                                   // Disable support for DHT11, AM2301 (DHT21, DHT22, AM2302, AM2321) and SI7021 Temperature and Humidity sensor
 #undef USE_MAX31855                              // Disable MAX31855 K-Type thermocouple sensor using softSPI
@@ -499,6 +520,7 @@
 #undef USE_ARDUINO_OTA                           // Disable support for Arduino OTA
 #define USE_DOMOTICZ                             // Enable Domoticz
 #undef USE_HOME_ASSISTANT                        // Disable Home Assistant
+#define USE_TASMOTA_DISCOVERY                    // Enable Tasmota Discovery support (+2k code)
 
 #define UPGRADE_V8_MIN                           // do not support upgrading from version below 8.0.0
 
@@ -582,12 +604,13 @@
 #undef USE_IBEACON                               // Disable support for bluetooth LE passive scan of ibeacon devices (uses HM17 module)
 #undef USE_GPS                                   // Disable support for GPS and NTP Server for becoming Stratus 1 Time Source (+ 3.1kb flash, +132 bytes RAM)
 #undef USE_HM10                                  // (ESP8266 only) Disable support for HM-10 as a BLE-bridge for the LYWSD03 (+5k1 code)
-#undef USE_BLE_ESP32                             // (ESP32 only) Disable support for native BLE on ESP32 - use new driver 
+#undef USE_BLE_ESP32                             // (ESP32 only) Disable support for native BLE on ESP32 - use new driver
 #undef USE_MI_ESP32                              // (ESP32 only) Disable support for ESP32 as a BLE-bridge (+9k2 mem, +292k flash)
 #undef USE_HRXL                                  // Disable support for MaxBotix HRXL-MaxSonar ultrasonic range finders (+0k7)
 #undef USE_TASMOTA_CLIENT                        // Disable support for Arduino Uno/Pro Mini via serial interface including flashing (+2k3 code, 44 mem)
 #undef USE_OPENTHERM                             // Disable support for OpenTherm (+15k code)
 #undef USE_MIEL_HVAC                             // Disable support for Mitsubishi Electric HVAC serial interface (+5k code)
+#undef USE_PROJECTOR_CTRL                        // Disable support for LCD/DLP Projector serial control interface
 
 #undef USE_ENERGY_SENSOR                         // Disable energy sensors
 #undef USE_ADE7953                               // Disable ADE7953 Energy monitor as used on Shelly 2.5 (I2C address 0x38) (+1k5)
@@ -595,6 +618,7 @@
 #undef USE_PZEM_AC                               // Disable PZEM014,016 Energy monitor
 #undef USE_PZEM_DC                               // Disable PZEM003,017 Energy monitor
 #undef USE_MCP39F501                             // Disable MCP39F501 Energy monitor as used in Shelly 2
+#undef USE_SDM72                                 // Disable support for Eastron SDM72-Modbus energy meter
 #undef USE_SDM120                                // Disable support for Eastron SDM120-Modbus energy meter
 #undef USE_SDM630                                // Disable support for Eastron SDM630-Modbus energy monitor (+0k6 code)
 #undef USE_DDS2382                               // Disable support for Hiking DDS2382 Modbus energy monitor (+0k6 code)
@@ -626,6 +650,7 @@
 #define USE_ZIGBEE
 #undef USE_ZIGBEE_ZNP
 #define USE_ZIGBEE_EZSP
+#define USE_ZIGBEE_EEPROM                        // EEPROM of Sonoff ZBBridge via I2C
 #define USE_TCP_BRIDGE
   #define USE_ZIGBEE_CHANNEL  11                 // Zigbee Channel (11-26)
   #define USE_ZIGBEE_COALESCE_ATTR_TIMER 350     // timer to coalesce attribute values (in ms)
@@ -649,6 +674,7 @@
 #undef USE_ARDUINO_OTA                           // Disable support for Arduino OTA
 #undef USE_DOMOTICZ                              // Disable Domoticz
 #undef USE_HOME_ASSISTANT                        // Disable Home Assistant
+#define USE_TASMOTA_DISCOVERY                    // Enable Tasmota Discovery support (+2k code)
 #undef USE_MQTT_TLS                              // Disable TLS support won't work as the MQTTHost is not set
 #undef USE_KNX                                   // Disable KNX IP Protocol Support
 //#undef USE_WEBSERVER                             // Disable Webserver
@@ -720,18 +746,20 @@
 #undef USE_IBEACON                               // Disable support for bluetooth LE passive scan of ibeacon devices (uses HM17 module)
 #undef USE_GPS                                   // Disable support for GPS and NTP Server for becoming Stratus 1 Time Source (+ 3.1kb flash, +132 bytes RAM)
 #undef USE_HM10                                  // (ESP8266 only) Disable support for HM-10 as a BLE-bridge for the LYWSD03 (+5k1 code)
-#undef USE_BLE_ESP32                             // (ESP32 only) Disable support for native BLE on ESP32 - use new driver 
+#undef USE_BLE_ESP32                             // (ESP32 only) Disable support for native BLE on ESP32 - use new driver
 #undef USE_MI_ESP32                              // (ESP32 only) Disable support for ESP32 as a BLE-bridge (+9k2 mem, +292k flash)
 #undef USE_HRXL                                  // Disable support for MaxBotix HRXL-MaxSonar ultrasonic range finders (+0k7)
 #undef USE_TASMOTA_CLIENT                        // Disable support for Arduino Uno/Pro Mini via serial interface including flashing (+2k3 code, 44 mem)
 #undef USE_OPENTHERM                             // Disable support for OpenTherm (+15k code)
 #undef USE_MIEL_HVAC                             // Disable support for Mitsubishi Electric HVAC serial interface (+5k code)
+#undef USE_PROJECTOR_CTRL                        // Disable support for LCD/DLP Projector serial control interface
 
 //#undef USE_ENERGY_SENSOR                         // Disable energy sensors
 #undef USE_PZEM004T                              // Disable PZEM004T energy sensor
 #undef USE_PZEM_AC                               // Disable PZEM014,016 Energy monitor
 #undef USE_PZEM_DC                               // Disable PZEM003,017 Energy monitor
 //#undef USE_MCP39F501                             // Disable MCP39F501 Energy monitor as used in Shelly 2
+#undef USE_SDM72                                 // Disable support for Eastron SDM72-Modbus energy meter
 #undef USE_SDM120                                // Disable support for Eastron SDM120-Modbus energy meter
 #undef USE_SDM630                                // Disable support for Eastron SDM630-Modbus energy monitor (+0k6 code)
 #undef USE_DDS2382                               // Disable support for Hiking DDS2382 Modbus energy monitor (+0k6 code)
@@ -778,7 +806,6 @@
 #undef FIRMWARE_KNX_NO_EMULATION                 // Disable tasmota-knx with KNX but without Emulation
 #undef FIRMWARE_DISPLAYS                         // Disable tasmota-display with display drivers enabled
 #undef FIRMWARE_IR                               // Disable tasmota-ir with IR full protocols activated
-#undef FIRMWARE_IR_CUSTOM                        // Disable tasmota customizable with special marker to add all IR protocols
 
 #undef USE_ARDUINO_OTA                           // Disable support for Arduino OTA
 #undef USE_DOMOTICZ                              // Disable Domoticz
@@ -860,12 +887,13 @@
 #undef USE_IBEACON                               // Disable support for bluetooth LE passive scan of ibeacon devices (uses HM17 module)
 #undef USE_GPS                                   // Disable support for GPS and NTP Server for becoming Stratus 1 Time Source (+ 3.1kb flash, +132 bytes RAM)
 #undef USE_HM10                                  // (ESP8266 only) Disable support for HM-10 as a BLE-bridge for the LYWSD03 (+5k1 code)
-#undef USE_BLE_ESP32                             // (ESP32 only) Disable support for native BLE on ESP32 - use new driver 
+#undef USE_BLE_ESP32                             // (ESP32 only) Disable support for native BLE on ESP32 - use new driver
 #undef USE_MI_ESP32                              // (ESP32 only) Disable support for ESP32 as a BLE-bridge (+9k2 mem, +292k flash)
 #undef USE_HRXL                                  // Disable support for MaxBotix HRXL-MaxSonar ultrasonic range finders (+0k7)
 #undef USE_TASMOTA_CLIENT                        // Disable support for Arduino Uno/Pro Mini via serial interface including flashing (+2k3 code, 44 mem)
 #undef USE_OPENTHERM                             // Disable support for OpenTherm (+15k code)
 #undef USE_MIEL_HVAC                             // Disable support for Mitsubishi Electric HVAC serial interface (+5k code)
+#undef USE_PROJECTOR_CTRL                        // Disable support for LCD/DLP Projector serial control interface
 #undef USE_AS608                                 // Disable support for AS608 optical and R503 capacitive fingerprint sensor (+3k4 code)
 
 #undef USE_ENERGY_SENSOR                         // Disable energy sensors
@@ -873,6 +901,7 @@
 #undef USE_PZEM_AC                               // Disable PZEM014,016 Energy monitor
 #undef USE_PZEM_DC                               // Disable PZEM003,017 Energy monitor
 #undef USE_MCP39F501                             // Disable MCP39F501 Energy monitor as used in Shelly 2
+#undef USE_SDM72                                 // Disable support for Eastron SDM72-Modbus energy meter
 #undef USE_SDM120                                // Disable support for Eastron SDM120-Modbus energy meter
 #undef USE_SDM630                                // Disable support for Eastron SDM630-Modbus energy monitor (+0k6 code)
 #undef USE_DDS2382                               // Disable support for Hiking DDS2382 Modbus energy monitor (+0k6 code)
@@ -923,7 +952,6 @@
 #undef FIRMWARE_KNX_NO_EMULATION                // Disable tasmota-knx with KNX but without Emulation
 #undef FIRMWARE_DISPLAYS                        // Disable tasmota-display with display drivers enabled
 #undef FIRMWARE_IR                              // Disable tasmota-ir with IR full protocols activated
-#undef FIRMWARE_IR_CUSTOM                       // Disable tasmota customizable with special marker to add all IR protocols
 
 #endif  // FIRMWARE_MINICUSTOM
 
@@ -932,5 +960,79 @@
 #include "tasmota_configurations_ESP32.h"
 #endif  // ESP32
 
+/*********************************************************************************************\
+ * Post-configuration for IRremoteESP8266 protocol selection
+\*********************************************************************************************/
+
+// IR_SEND has two mode: minimal or full (USE_IR_REMOTE_FULL)
+#ifdef USE_IR_REMOTE_FULL
+  // Enable all protocols except PRONTO
+  #ifndef _IR_ENABLE_DEFAULT_                  // it is possible to define this value previously in config
+    #define _IR_ENABLE_DEFAULT_ true           // Enable all protocols except exluded below
+  #endif
+  // PRONTO protocol cannot be supported because it requires specific APIs which are not supported in Tasmota
+  #define DECODE_PRONTO false                  // Exclude PRONTO protocol
+  #define SEND_PRONTO false                    // Exclude PRONTO protocol
+#else
+  #define _IR_ENABLE_DEFAULT_ false              // disable all protocols by default
+  // below are the default IR protocols
+  #define DECODE_HASH true
+  #ifdef USE_IR_SEND_NEC
+    #define SEND_NEC   true                      // Support IRsend NEC protocol
+    #define DECODE_NEC true                      // Support IRreceive NEC protocol
+  #endif
+  #ifdef USE_IR_SEND_RC5
+    #define SEND_RC5   true                      // Support IRsend Philips RC5 protocol
+    #define DECODE_RC5 true                      // Support IRreceive Philips RC5 protocol
+  #endif
+  #ifdef USE_IR_SEND_RC6
+    #define SEND_RC6   true                      // Support IRsend Philips RC6 protocol
+    #define DECODE_RC6 true                      // Support IRreceive Philips RC6 protocol
+  #endif
+#endif
+
+/*********************************************************************************************\
+ * Mandatory defines satisfying disabled defines
+\*********************************************************************************************/
+
+#ifndef ESP8266_1M
+#define USE_UFILESYS
+#define GUI_TRASH_FILE
+#define GUI_EDIT_FILE
+#define USE_PING
+  #ifdef USE_RULES
+  #define USE_EXPRESSION
+  #define SUPPORT_IF_STATEMENT
+  #define SUPPORT_MQTT_EVENT
+  #endif  // USE_RULES
+#endif  // NOT ESP8266_1M
+
+#ifdef USE_EMULATION_HUE
+#define USE_EMULATION
+#endif
+#ifdef USE_EMULATION_WEMO
+#define USE_EMULATION
+#endif
+
+// Convert legacy slave to client
+#ifdef USE_TASMOTA_SLAVE
+#define USE_TASMOTA_CLIENT
+#endif
+#ifdef USE_TASMOTA_SLAVE_FLASH_SPEED
+#define USE_TASMOTA_CLIENT_FLASH_SPEED USE_TASMOTA_SLAVE_FLASH_SPEED
+#endif
+#ifdef USE_TASMOTA_SLAVE_SERIAL_SPEED
+#define USE_TASMOTA_CLIENT_SERIAL_SPEED USE_TASMOTA_SLAVE_SERIAL_SPEED
+#endif
+
+#ifdef USE_SCRIPT
+#define USE_UNISHOX_COMPRESSION                // Add support for string compression
+#endif
+#ifdef USE_ZIGBEE
+#define USE_UNISHOX_COMPRESSION                // Add support for string compression
+#endif
+#ifdef USE_EMULATION_HUE
+#define USE_UNISHOX_COMPRESSION                // Add support for string compression
+#endif
 
 #endif  // _TASMOTA_CONFIGURATIONS_H_

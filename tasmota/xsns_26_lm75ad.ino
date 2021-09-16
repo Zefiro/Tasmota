@@ -56,7 +56,7 @@ void LM75ADDetect(void)
     if (I2cActive(lm75ad_address)) {
       continue; }
     if (!I2cSetDevice(lm75ad_address)) {
-      break; // do not make the next step without a confirmed device on the bus
+      continue; // do not make the next step without a confirmed device on the bus
     }
     uint16_t buffer;
     if (I2cValidRead16(&buffer, lm75ad_address, LM75_THYST_REGISTER)) {
@@ -87,7 +87,7 @@ void LM75ADShow(bool json)
   float t = LM75ADGetTemp();
 
   if (json) {
-    ResponseAppend_P(JSON_SNS_F_TEMP, "LM75AD", Settings.flag2.temperature_resolution, &t);
+    ResponseAppend_P(JSON_SNS_F_TEMP, "LM75AD", Settings->flag2.temperature_resolution, &t);
 #ifdef USE_DOMOTICZ
     if (0 == TasmotaGlobal.tele_period) DomoticzFloatSensor(DZ_TEMP, t);
 #endif  // USE_DOMOTICZ

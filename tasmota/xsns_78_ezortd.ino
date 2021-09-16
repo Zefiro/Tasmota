@@ -38,10 +38,9 @@ struct EZORTD : public EZOStruct {
     float temp = ConvertTemp(temperature);
 
     if (json) {
-      ResponseAppend_P(JSON_SNS_F_TEMP, name, Settings.flag2.temperature_resolution, &temp);
-    }
+      ResponseAppend_P(JSON_SNS_F_TEMP, name, Settings->flag2.temperature_resolution, &temp);
 #ifdef USE_WEBSERVER
-    else {
+    }else {
       WSContentSend_Temp(name, temp);
 #endif  // USE_WEBSERVER
     }

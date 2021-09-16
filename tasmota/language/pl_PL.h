@@ -1,7 +1,7 @@
 /*
   pl-PL-d.h - localization for Polish with diacritics - Poland for Tasmota
 
-  Copyright (C) 2021  Theo Arends (translated by roblad - Robert L., upgraded by R. Turala)
+  Copyright (C) 2021  Roblad (Robert L.) and R. Turala
 
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -28,7 +28,7 @@
  * Use online command StateText to translate ON, OFF, HOLD and TOGGLE.
  * Use online command Prefix to translate cmnd, stat and tele.
  *
- * Updated until v5.12.0d
+ * Updated until v9.3.1.1
 \*********************************************************************/
 
 //#define LANGUAGE_MODULE_NAME         // Enable to display "Module Generic" (ie Spanish), Disable to display "Generic Module" (ie English)
@@ -100,6 +100,7 @@
 #define D_FALSE "Fałsz"
 #define D_FILE "Plik"
 #define D_FLOW_RATE "Przepływ"
+#define D_FRAGMENTATION "frag."      // Lower case abbreviated version of fragmentation used in "memory fragmentation"
 #define D_FREE_MEMORY "Wolna pamięć"
 #define D_PSR_MAX_MEMORY "Pamięć PS-RAM"
 #define D_PSR_FREE_MEMORY "Wolna pamięć PS-RAM"
@@ -108,6 +109,7 @@
 #define D_GATEWAY "Brama"
 #define D_GROUP "Grupa"
 #define D_HOST "Serwer"
+#define D_HALL_EFFECT "Hall Effect"
 #define D_HOSTNAME "Nazwa serwera"
 #define D_HUMIDITY "Wilgotność"
 #define D_ILLUMINANCE "Podświetlanie"
@@ -196,6 +198,8 @@
 #define D_WEIGHT "Waga"
 #define D_WARMLIGHT "Temperatura światła"
 #define D_WEB_SERVER "Serwer Web"
+#define D_SOC "State of Charge"
+#define D_SOH "State of Health"
 
 // tasmota.ino
 #define D_WARNING_MINIMAL_VERSION "UWAGA Ta wersja nie obsługuje zapisu ustawień"
@@ -254,6 +258,7 @@
 #define D_CONFIGURATION "Konfiguracja"
 #define D_INFORMATION "Informacje"
 #define D_FIRMWARE_UPGRADE "Aktualizacja oprogramowania"
+#define D_MANAGEMENT "Konsole"
 #define D_CONSOLE "Konsola"
 #define D_CONFIRM_RESTART "Potwierdź restart"
 
@@ -288,10 +293,19 @@
 #define D_WEP "WEP"
 #define D_WPA_PSK "WPA PSK"
 #define D_WPA2_PSK "WPA2 PSK"
-#define D_AP1_SSID "Nazwa 1"
-#define D_AP1_PASSWORD "Hasło 1"
+#define D_AP1_SSID "Nazwa"
+#define D_AP1_SSID_HELP "Wpisz lub wybierz swoją sieć WiFi"
 #define D_AP2_SSID "Nazwa 2"
-#define D_AP2_PASSWORD "Hasło 2"
+#define D_AP2_SSID_HELP "Wpisz alternatywną sieć WiFi"
+#define D_AP_PASSWORD "Hasło"
+#define D_AP_PASSWORD_HELP "Wprowadź swoje hasło WiFi"
+#define D_SELECT_YOUR_WIFI_NETWORK "Wybierz swoją sieć WiFi"
+#define D_SHOW_MORE_WIFI_NETWORKS "Wyszukaj wszystkie sieci WiFi"
+#define D_SHOW_MORE_OPTIONS "Więcej opcji"
+#define D_CHECK_CREDENTIALS "Sprawdź swoje dane uwierzytelniające"
+#define D_SUCCESSFUL_WIFI_CONNECTION "Pomyślne połączenie WiFi"
+#define D_NOW_YOU_CAN_CLOSE_THIS_WINDOW "Teraz możesz zamknąć to okno"
+#define D_REDIRECTING_TO_NEW_IP "Przekierowanie na adres IP nowego urządzenia"
 
 #define D_MQTT_PARAMETERS "Parametry MQTT"
 #define D_CLIENT "Klient"
@@ -314,6 +328,8 @@
 #define D_WEB_ADMIN_PASSWORD "Hasło administratora"
 #define D_MQTT_ENABLE "Załącz MQTT"
 #define D_MQTT_TLS_ENABLE "MQTT TLS"
+#define D_HTTP_API "HTTP API"
+#define D_HTTP_API_ENABLE "Załącz HTTP API"
 #define D_FRIENDLY_NAME "Nazwa"
 #define D_BELKIN_WEMO "Belkin WeMo"
 #define D_HUE_BRIDGE "Mostek Hue"
@@ -566,6 +582,8 @@
 
 // xsns_53_sml.ino
 #define D_TPWRIN "Energia Całkowita-In"
+#define D_TPWRIN0 "Energia Całkowita-In T0"
+#define D_TPWRIN1 "Energia Całkowita-In T1"
 #define D_TPWROUT "Energia Całkowita-Out"
 #define D_TPWRCURR "Moc Czynna -In/Out"
 #define D_TPWRCURR1 "Moc Czynna-In p1"
@@ -584,6 +602,10 @@
 #define D_StL1L2L3 "Prąd suma"
 #define D_SpL1L2L3 "Prąd średni"
 
+// xsns_86_tfminiplus.ino
+#define D_SIGNALSTRENGTH "Siła sygnału"
+#define D_CHIPTEMPERATURE "Temperatura Chipa"
+
 // tasmota_template.h - keep them as short as possible to be able to fit them in GUI drop down box
 #define D_SENSOR_NONE          "Brak"
 #define D_SENSOR_USER          "Użytkownik"
@@ -594,6 +616,12 @@
 #define D_SENSOR_DS18X20       "DS18x20"
 #define D_SENSOR_I2C_SCL       "I2C SCL"
 #define D_SENSOR_I2C_SDA       "I2C SDA"
+#define D_SENSOR_I2S_OUT_DATA  "I2S Out Data"
+#define D_SENSOR_I2S_OUT_CLK   "I2S Out Clk"
+#define D_SENSOR_I2S_OUT_SLCT  "I2S Out Slct"
+#define D_SENSOR_I2S_IN_DATA   "I2S In Data"
+#define D_SENSOR_I2S_IN_CLK    "I2S In Clk"
+#define D_SENSOR_I2S_IN_SLCT   "I2S In Slct"
 #define D_SENSOR_WS2812        "WS2812"
 #define D_SENSOR_DFR562        "Odtwarzacz MP3"
 #define D_SENSOR_IRSEND        "IRsend"
@@ -604,6 +632,8 @@
 #define D_SENSOR_LED_LINK      "Led link"    // Suffix "i"
 #define D_SENSOR_PWM           "Obroty"        // Suffix "1"
 #define D_SENSOR_COUNTER       "Licznik"     // Suffix "1"
+#define D_SENSOR_INTERRUPT     "Interrupt"
+#define D_SENSOR_INPUT         "Input"
 #define D_SENSOR_IRRECV        "IRrecv"
 #define D_SENSOR_MHZ_RX        "MHZ Rx"
 #define D_SENSOR_MHZ_TX        "MHZ Tx"
@@ -629,15 +659,22 @@
 #define D_SENSOR_SBR_TX        "SerBr Tx"
 #define D_SENSOR_SR04_TRIG     "SR04 Tri/TX"
 #define D_SENSOR_SR04_ECHO     "SR04 Ech/RX"
+#define D_SENSOR_SDM72_TX      "SDM72 Tx"
+#define D_SENSOR_SDM72_RX      "SDM72 Rx"
 #define D_SENSOR_SDM120_TX     "SDMx20 Tx"
 #define D_SENSOR_SDM120_RX     "SDMx20 Rx"
 #define D_SENSOR_SDM630_TX     "SDM630 Tx"
 #define D_SENSOR_SDM630_RX     "SDM630 Rx"
 #define D_SENSOR_WE517_TX      "WE517 Tx"
 #define D_SENSOR_WE517_RX      "WE517 Rx"
-#define D_SENSOR_TM1638_CLK    "TM16 CLK"
-#define D_SENSOR_TM1638_DIO    "TM16 DIO"
-#define D_SENSOR_TM1638_STB    "TM16 STB"
+#define D_SENSOR_TM1637_CLK    "TM1637 CLK"
+#define D_SENSOR_TM1637_DIO    "TM1637 DIO"
+#define D_SENSOR_TM1638_CLK    "TM1638 CLK"
+#define D_SENSOR_TM1638_DIO    "TM1638 DIO"
+#define D_SENSOR_TM1638_STB    "TM1638 STB"
+#define D_SENSOR_MAX7219_DIN    "MAX7219 DIN"
+#define D_SENSOR_MAX7219_CS    "MAX7219 CS"
+#define D_SENSOR_MAX7219_CLK    "MAX7219 CLK"
 #define D_SENSOR_HX711_SCK     "HX711 SCK"
 #define D_SENSOR_HX711_DAT     "HX711 DAT"
 #define D_SENSOR_FTC532        "FTC532"
@@ -669,6 +706,8 @@
 #define D_SENSOR_MCP39F5_TX    "MCP39F5 Tx"
 #define D_SENSOR_MCP39F5_RX    "MCP39F5 Rx"
 #define D_SENSOR_MCP39F5_RST   "MCP39F5 Rst"
+#define D_SENSOR_CSE7761_TX    "CSE7761 Tx"
+#define D_SENSOR_CSE7761_RX    "CSE7761 Rx"
 #define D_SENSOR_CSE7766_TX    "CSE7766 Tx"
 #define D_SENSOR_CSE7766_RX    "CSE7766 Rx"
 #define D_SENSOR_PN532_TX      "PN532 Tx"
@@ -684,12 +723,12 @@
 #define D_SENSOR_ARIRFSEL      "ALux IrSel"
 #define D_SENSOR_TXD           "Serial Tx"
 #define D_SENSOR_RXD           "Serial Rx"
-#define D_SENSOR_ROTARY        "Rotary"     // Suffix "1A"
+#define D_SENSOR_ROTARY        "Obroty"     // Suffix "1A"
 #define D_SENSOR_HRE_CLOCK     "HRE Zegar"
 #define D_SENSOR_HRE_DATA      "HRE Dane"
 #define D_SENSOR_ADE7953_IRQ   "ADE7953 IRQ"
 #define D_SENSOR_BUZZER        "Dzwonek"
-#define D_SENSOR_OLED_RESET    "Reset OLED"
+#define D_SENSOR_DISP_RESET    "Reset Display"
 #define D_SENSOR_ZIGBEE_TXD    "Zigbee Tx"
 #define D_SENSOR_ZIGBEE_RXD    "Zigbee Rx"
 #define D_SENSOR_ZIGBEE_RST    "Zigbee Rst"
@@ -764,18 +803,22 @@
 #define D_SENSOR_IEM3000_RX    "iEM3000 RX"
 #define D_SENSOR_MIEL_HVAC_TX  "MiEl HVAC Tx"
 #define D_SENSOR_MIEL_HVAC_RX  "MiEl HVAC Rx"
+#define D_SENSOR_PROJECTOR_CTRL_TX  "DLP Tx"
+#define D_SENSOR_PROJECTOR_CTRL_RX  "DLP Rx"
 #define D_SENSOR_SHELLY_DIMMER_BOOT0 "SHD Boot 0"
 #define D_SENSOR_SHELLY_DIMMER_RST_INV "SHD Reset"
 #define D_SENSOR_RC522_RST     "RC522 Rst"
 #define D_SENSOR_RC522_CS      "RC522 CS"
 #define D_SENSOR_NRF24_CS      "NRF24 CS"
 #define D_SENSOR_NRF24_DC      "NRF24 DC"
+#define D_SENSOR_XPT2046_CS    "XPT2046 CS"
 #define D_SENSOR_ILI9341_CS    "ILI9341 CS"
 #define D_SENSOR_ILI9341_DC    "ILI9341 DC"
 #define D_SENSOR_ILI9488_CS    "ILI9488 CS"
 #define D_SENSOR_EPAPER29_CS   "EPaper29 CS"
 #define D_SENSOR_EPAPER42_CS   "EPaper42 CS"
 #define D_SENSOR_SSD1351_CS    "SSD1351 CS"
+#define D_SENSOR_SSD1351_DC    "SSD1351 DC"
 #define D_SENSOR_RA8876_CS     "RA8876 CS"
 #define D_SENSOR_ST7789_CS     "ST7789 CS"
 #define D_SENSOR_ST7789_DC     "ST7789 DC"
@@ -786,7 +829,16 @@
 #define D_SENSOR_WIEGAND_D1    "Wiegand D1"
 #define D_SENSOR_NEOPOOL_TX    "NeoPool Tx"
 #define D_SENSOR_NEOPOOL_RX    "NeoPool Rx"
-
+#define D_SENSOR_VL53L0X_XSHUT "VL53L0X XSHUT"
+#define D_SENSOR_TFMINIPLUS_TX  "TFmini+ TX"
+#define D_SENSOR_TFMINIPLUS_RX  "TFmini+ RX"
+#define D_SENSOR_ZEROCROSS     "ZC Pulse"
+#define D_SENSOR_HALLEFFECT    "Efekt Halla"
+#define D_SENSOR_EPD_DATA      "EPD Dane"
+#define D_SENSOR_MCP2515_CS    "MCP2515 CS"
+#define D_SENSOR_HRG15_RX      "HRG15 Rx"
+#define D_SENSOR_HRG15_TX      "HRG15 Tx"
+#define D_SENSOR_VINDRIKTNING_RX "VINDRIKTNING"
 
 // Units
 #define D_UNIT_AMPERE "A"
@@ -822,6 +874,7 @@
 #define D_UNIT_PARTS_PER_BILLION "ppb"
 #define D_UNIT_PARTS_PER_DECILITER "ppd"
 #define D_UNIT_PARTS_PER_MILLION "ppm"
+#define D_UNIT_MILIGRAMS_PER_LITER "mg/L"
 #define D_UNIT_PERCENT "%%"
 #define D_UNIT_PRESSURE "hPa"
 #define D_UNIT_SECOND "sec"
@@ -833,7 +886,13 @@
 #define D_UNIT_WATTHOUR "Wh"
 #define D_UNIT_WATT_METER_QUADRAT "W/m²"
 
-//SDM220, SDM120, LE01MR
+#define D_NEW_ADDRESS          "Ustawiam adres na"
+#define D_OUT_OF_RANGE         "Poza zakresem"
+#define D_SENSOR_DETECTED      "wykryto"
+
+//SDM220, SDM120, SDM72, LE01MR
+#define D_EXPORT_POWER    "Moc Eksportowana"
+#define D_IMPORT_POWER 	  "Moc Inportowana"
 #define D_PHASE_ANGLE     "Przesunięcie faz"
 #define D_IMPORT_ACTIVE   "Czynna pobrana"
 #define D_EXPORT_ACTIVE   "Czynna oddana"
@@ -841,7 +900,7 @@
 #define D_EXPORT_REACTIVE "Bierna oddana"
 #define D_TOTAL_REACTIVE  "Bierna całkowita"
 #define D_UNIT_KWARH      "kVArh"
-#define D_UNIT_ANGLE      "Deg"
+#define D_UNIT_ANGLE      "Stopni"
 #define D_TOTAL_ACTIVE    "Całkowita czynna"
 
 //SOLAXX1
@@ -885,6 +944,10 @@
 #define D_MANAGE_FILE_SYSTEM   "Menadżer plików"
 #define D_FS_SIZE              "Rozmiar"
 #define D_FS_FREE              "Wolne"
+#define D_NEW_FILE             "nowyplik.txt"
+#define D_CREATE_NEW_FILE      "Utwórz i edytuj nowy plik"
+#define D_EDIT_FILE            "Edytuj Plik"
+#define D_CONFIRM_FILE_DEL     "Confirm file deletion"
 
 //xsns_67_as3935.ino
 #define D_AS3935_GAIN "wejście:"
@@ -925,38 +988,38 @@
 #define D_MAX_CURRENT     "Moc aktualna"
 
 // xsns_79_as608.ino
-#define D_FP_ENROLL_PLACEFINGER "Place finger"
-#define D_FP_ENROLL_REMOVEFINGER "Remove finger"
-#define D_FP_ENROLL_PLACESAMEFINGER "Place same finger again"
-#define D_FP_ENROLL_RETRY "Error so retry"
+#define D_FP_ENROLL_PLACEFINGER "Umieść palec"
+#define D_FP_ENROLL_REMOVEFINGER "Zabierz palec"
+#define D_FP_ENROLL_PLACESAMEFINGER "Ponownie umieść ten sam palec"
+#define D_FP_ENROLL_RETRY "Błąd, spróbuj ponownie"
 #define D_FP_ENROLL_RESTART "Restart"
-#define D_FP_ENROLL_ERROR "Error"
+#define D_FP_ENROLL_ERROR "Błąd"
 #define D_FP_ENROLL_RESET "Reset"
-#define D_FP_ENROLL_ACTIVE "Active"
-#define D_FP_ENROLL_INACTIVE "Inactive"
+#define D_FP_ENROLL_ACTIVE "Aktywny"
+#define D_FP_ENROLL_INACTIVE "Nieaktywny"
 // Indexed by Adafruit_Fingerprint.h defines
-#define D_FP_PACKETRECIEVEERR "Comms error"    // 0x01 Error when receiving data package
+#define D_FP_PACKETRECIEVEERR "Błąd komunikacji"    // 0x01 Error when receiving data package
 #define D_FP_NOFINGER ""                       // 0x02 No finger on the sensor
-#define D_FP_IMAGEFAIL "Imaging error"         // 0x03 Failed to enroll the finger
-#define D_FP_IMAGEMESS "Image too messy"       // 0x06 Failed to generate character file due to overly disorderly fingerprint image
-#define D_FP_FEATUREFAIL "Fingerprint too small" // 0x07 Failed to generate character file due to the lack of character point or small fingerprint image
-#define D_FP_NOMATCH "No match"                // 0x08 Finger doesn't match
-#define D_FP_NOTFOUND "Did not find a match"   // 0x09 Failed to find matching finger
-#define D_FP_ENROLLMISMATCH "Fingerprint did not match" // 0x0A Failed to combine the character files
-#define D_FP_BADLOCATION "Bad location"        // 0x0B Addressed PageID is beyond the finger library
-#define D_FP_DBRANGEFAIL "DB range error"      // 0x0C Error when reading template from library or invalid template
-#define D_FP_UPLOADFEATUREFAIL "Upload feature error" // 0x0D Error when uploading template
-#define D_FP_PACKETRESPONSEFAIL "Packet response error" // 0x0E Module failed to receive the following data packages
-#define D_FP_UPLOADFAIL "Upload error"         // 0x0F Error when uploading image
-#define D_FP_DELETEFAIL "Delete error"         // 0x10 Failed to delete the template
-#define D_FP_DBCLEARFAIL "DB Clear error"      // 0x11 Failed to clear finger library
-#define D_FP_PASSFAIL "Password error"         // 0x13 Find whether the fingerprint passed or failed
-#define D_FP_INVALIDIMAGE "Image invalid"      // 0x15 Failed to generate image because of lac of valid primary image
-#define D_FP_FLASHERR "Flash write error"      // 0x18 Error when writing flash
-#define D_FP_INVALIDREG "Invalid number"       // 0x1A Invalid register number
-#define D_FP_ADDRCODE "Address code"           // 0x20 Address code
-#define D_FP_PASSVERIFY "Password verified"    // 0x21 Verify the fingerprint passed
-#define D_FP_UNKNOWNERROR "Error"              // Any other error
+#define D_FP_IMAGEFAIL "Błąd obrazu"         // 0x03 Failed to enroll the finger
+#define D_FP_IMAGEMESS "Obraz zbyt zamazany"       // 0x06 Failed to generate character file due to overly disorderly fingerprint image
+#define D_FP_FEATUREFAIL "Zbyt mały odcisk palca" // 0x07 Failed to generate character file due to the lack of character point or small fingerprint image
+#define D_FP_NOMATCH "Brak dopasowania"                // 0x08 Finger doesn't match
+#define D_FP_NOTFOUND "Nie znalazłem dopasowania"   // 0x09 Failed to find matching finger
+#define D_FP_ENROLLMISMATCH "Odcisk palca nie pasuje" // 0x0A Failed to combine the character files
+#define D_FP_BADLOCATION "Zła lokalizacja"        // 0x0B Addressed PageID is beyond the finger library
+#define D_FP_DBRANGEFAIL "Błąd zakresu DB"      // 0x0C Error when reading template from library or invalid template
+#define D_FP_UPLOADFEATUREFAIL "Błąd funkcji przesyłania" // 0x0D Error when uploading template
+#define D_FP_PACKETRESPONSEFAIL "Błędny pakiet odpowiedzi" // 0x0E Module failed to receive the following data packages
+#define D_FP_UPLOADFAIL "Błąd przesyłania"         // 0x0F Error when uploading image
+#define D_FP_DELETEFAIL "Błąd usuwania"         // 0x10 Failed to delete the template
+#define D_FP_DBCLEARFAIL "Błąd czyszczenia DB"      // 0x11 Failed to clear finger library
+#define D_FP_PASSFAIL "Błąd uwierzytelniania"         // 0x13 Find whether the fingerprint passed or failed
+#define D_FP_INVALIDIMAGE "Obraz jest nieprawidłowy"      // 0x15 Failed to generate image because of lac of valid primary image
+#define D_FP_FLASHERR "Błąd zapisu Flash"      // 0x18 Error when writing flash
+#define D_FP_INVALIDREG "Nieprawidłowy numer"       // 0x1A Invalid register number
+#define D_FP_ADDRCODE "Adres kodu"           // 0x20 Address code
+#define D_FP_PASSVERIFY "Zweryfikowano poprawnie"    // 0x21 Verify the fingerprint passed
+#define D_FP_UNKNOWNERROR "Błąd"              // Any other error
 
 // xsns_83_neopool.ino
 #define D_NEOPOOL_MACH_NONE               "NeoPool"           // Machine names
@@ -1001,13 +1064,17 @@
 #define D_NEOPOOL_PR_OFF                  "PrOff"
 #define D_NEOPOOL_SETPOINT_OK             "Ok"
 #define D_NEOPOOL_COVER                   "Cover"
-#define D_NEOPOOL_SHOCK                   "Shock"
-#define D_NEOPOOL_ALARM                   "! "
+#define D_NEOPOOL_SHOCK                   "Boost"
+#define D_NEOPOOL_STATUS_ON               "ON"
+#define D_NEOPOOL_STATUS_OFF              "OFF"
+#define D_NEOPOOL_STATUS_WAIT             "WAIT"
+#define D_NEOPOOL_STATUS_TANK             "TANK"
+#define D_NEOPOOL_STATUS_FLOW             "Flow"
 #define D_NEOPOOL_LOW                     "Low"
 #define D_NEOPOOL_FLOW1                   "FL1"
 #define D_NEOPOOL_FLOW2                   "FL2"
 #define D_NEOPOOL_PH_HIGH                 "too high"          // ph Alarms
 #define D_NEOPOOL_PH_LOW                  "too low"
-#define D_NEOPOOL_PUMP_TIME_EXCEEDED      "pump time exceeded"
+#define D_NEOPOOL_PUMP_TIME_EXCEEDED      "czas pompowania przekroczony"
 
 #endif  // _LANGUAGE_PL_PL_D_H_

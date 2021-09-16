@@ -52,7 +52,7 @@ a_on_off = ["OFF","ON "]
 a_setoption = [[
     "(Settings) Save power state (1) and use after restart",
     "(Button) Control button single press (1) or multipress (0)",
-    "(Not used) Add units to JSON status messages",
+    "(MQTT) Add global temperature/humidity/pressure info to JSON sensor message",
     "(MQTT) Enable (1)",
     "(MQTT) Switch between RESULT (0) or COMMAND (1)",
     "(MQTT) Retain on Power",
@@ -174,9 +174,15 @@ a_setoption = [[
     "(Light) run fading at fixed duration instead of fixed slew rate",
     "(Zigbee) Move ZbReceived from JSON message and into the subtopic replacing SENSOR default",
     "(Zigbee) Remove the device addr from json payload, can be used with zb_topic_fname where the addr is already known from the topic",
+    "(Zigbee) Append endpoint number to topic if device dependent (use with SetOption89)",
+    "(MQTT) Retain on State",
+    "(MQTT) Retain on Info",
+    "(Wiegand) switch tag number output to hex format (1)",
+    "(Wiegand) send key pad stroke as single char (0) or one tag (ending char #) (1)",
+    "(Zigbee) Hide bridge topic from zigbee topic (use with SetOption89) (1)",
+    "(DS18x20) Enable arithmetic mean over teleperiod for JSON temperature (1)",
+    "(Wifi) Keep wifi in no-sleep mode, prevents some occasional unresponsiveness",
     "","",
-    "","","","",
-    "","","","",
     "","","","",
     "","","","",
     "","","","",
@@ -245,12 +251,12 @@ a_features = [[
     "USE_DISPLAY_ILI9488","USE_DISPLAY_SSD1351","USE_DISPLAY_RA8876","USE_DISPLAY_ST7789",
     "USE_DISPLAY_SSD1331","USE_UFILESYS","USE_TIMEPROP","USE_PID",
     "USE_BS814A2","USE_SEESAW_SOIL","USE_WIEGAND","USE_NEOPOOL",
-    "USE_TOF10120","","",""
+    "USE_TOF10120","USE_SDM72","USE_DISPLAY_TM1637","USE_PROJECTOR_CTRL"
     ],[
-    "","","","",
-    "","","","",
-    "","","","",
-    "","","","",
+    "USE_MPU_ACCEL","USE_TFMINIPLUS","USE_CSE7761","USE_BERRY",
+    "USE_BM8563","USE_ENERGY_DUMMY","USE_AM2320","USE_T67XX",
+    "USE_MCP2515","USE_TASMESH","USE_WIFI_RANGE_EXTENDER","USE_INFLUXDB",
+    "USE_HRG15","USE_VINDRIKTNING","","",
     "","","","",
     "","","","",
     "","","","",
@@ -282,7 +288,7 @@ else:
         obj = json.load(fp)
 
 def StartDecode():
-    print ("\n*** decode-status.py v20210122 by Theo Arends and Jacek Ziolkowski ***")
+    print ("\n*** decode-status.py v20210901 by Theo Arends and Jacek Ziolkowski ***")
 
 #    print("Decoding\n{}".format(obj))
 
@@ -332,7 +338,11 @@ def StartDecode():
     if "StatusMEM" in obj:
         if "Features" in obj["StatusMEM"]:
             features = []
-            for f in range(7):
+            maxfeatures = len(obj["StatusMEM"]["Features"]) - 1
+            if maxfeatures > len(a_features):
+                print("decode-status.py too old, does not support all feature bits")
+            maxfeatures = min(maxfeatures, len(a_features))
+            for f in range(maxfeatures + 1):
                 feature = obj["StatusMEM"]["Features"][f]
                 i_feature = int(feature,16)
                 if f == 0:

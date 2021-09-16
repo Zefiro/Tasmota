@@ -7,7 +7,7 @@ jobs:
   tasmota32:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
@@ -22,12 +22,32 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: firmware
-        path: ./build_output/firmware
+        path: ./build_output
+
+  tasmota32solo1:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v1
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -U platformio
+        platformio upgrade --dev
+        platformio update
+    - name: Run PlatformIO
+      run: |
+        platformio run -e tasmota32solo1
+    - uses: actions/upload-artifact@v2
+      with:
+        name: firmware
+        path: ./build_output
 
   tasmota32-webcam:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
@@ -42,12 +62,12 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: firmware
-        path: ./build_output/firmware
+        path: ./build_output
 
   tasmota32-odroidgo:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
@@ -62,12 +82,12 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: firmware
-        path: ./build_output/firmware
+        path: ./build_output
 
   tasmota32-core2:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
@@ -82,12 +102,12 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: firmware
-        path: ./build_output/firmware
+        path: ./build_output
 
-  tasmota32-minimal:
+  tasmota32-bluetooth:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
@@ -98,76 +118,16 @@ jobs:
         platformio update
     - name: Run PlatformIO
       run: |
-        platformio run -e tasmota32-minimal
+        platformio run -e tasmota32-bluetooth
     - uses: actions/upload-artifact@v2
       with:
         name: firmware
-        path: ./build_output/firmware
-
-  tasmota32-lite:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v1
-    - name: Set up Python
-      uses: actions/setup-python@v1
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -U platformio
-        platformio upgrade --dev
-        platformio update
-    - name: Run PlatformIO
-      run: |
-        platformio run -e tasmota32-lite
-    - uses: actions/upload-artifact@v2
-      with:
-        name: firmware
-        path: ./build_output/firmware
-
-  tasmota32-knx:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v1
-    - name: Set up Python
-      uses: actions/setup-python@v1
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -U platformio
-        platformio upgrade --dev
-        platformio update
-    - name: Run PlatformIO
-      run: |
-        platformio run -e tasmota32-knx
-    - uses: actions/upload-artifact@v2
-      with:
-        name: firmware
-        path: ./build_output/firmware
-
-  tasmota32-sensors:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v1
-    - name: Set up Python
-      uses: actions/setup-python@v1
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -U platformio
-        platformio upgrade --dev
-        platformio update
-    - name: Run PlatformIO
-      run: |
-        platformio run -e tasmota32-sensors
-    - uses: actions/upload-artifact@v2
-      with:
-        name: firmware
-        path: ./build_output/firmware
+        path: ./build_output
 
   tasmota32-display:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
@@ -182,12 +142,32 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: firmware
-        path: ./build_output/firmware
+        path: ./build_output
+
+  tasmota32-lvgl:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v1
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -U platformio
+        platformio upgrade --dev
+        platformio update
+    - name: Run PlatformIO
+      run: |
+        platformio run -e tasmota32-lvgl
+    - uses: actions/upload-artifact@v2
+      with:
+        name: firmware
+        path: ./build_output
 
   tasmota32-ir:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
@@ -202,12 +182,12 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: firmware
-        path: ./build_output/firmware
+        path: ./build_output
 
   tasmota32-AF:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
@@ -222,12 +202,12 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: firmware
-        path: ./build_output/firmware
+        path: ./build_output
 
   tasmota32-BG:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
@@ -242,12 +222,12 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: firmware
-        path: ./build_output/firmware
+        path: ./build_output
 
   tasmota32-BR:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
@@ -262,12 +242,12 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: firmware
-        path: ./build_output/firmware
+        path: ./build_output
 
   tasmota32-CN:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
@@ -282,12 +262,12 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: firmware
-        path: ./build_output/firmware
+        path: ./build_output
 
   tasmota32-CZ:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
@@ -302,12 +282,12 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: firmware
-        path: ./build_output/firmware
+        path: ./build_output
 
   tasmota32-DE:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
@@ -322,12 +302,12 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: firmware
-        path: ./build_output/firmware
+        path: ./build_output
 
   tasmota32-ES:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
@@ -342,12 +322,12 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: firmware
-        path: ./build_output/firmware
+        path: ./build_output
 
   tasmota32-FR:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
@@ -362,12 +342,32 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: firmware
-        path: ./build_output/firmware
+        path: ./build_output
+
+  tasmota32-FY:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v1
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -U platformio
+        platformio upgrade --dev
+        platformio update
+    - name: Run PlatformIO
+      run: |
+        platformio run -e tasmota32-FY
+    - uses: actions/upload-artifact@v2
+      with:
+        name: firmware
+        path: ./build_output
 
   tasmota32-GR:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
@@ -382,12 +382,12 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: firmware
-        path: ./build_output/firmware
+        path: ./build_output
 
   tasmota32-HE:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
@@ -402,12 +402,12 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: firmware
-        path: ./build_output/firmware
+        path: ./build_output
 
   tasmota32-HU:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
@@ -422,12 +422,12 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: firmware
-        path: ./build_output/firmware
+        path: ./build_output
 
   tasmota32-IT:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
@@ -442,12 +442,12 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: firmware
-        path: ./build_output/firmware
+        path: ./build_output
 
   tasmota32-KO:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
@@ -462,12 +462,12 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: firmware
-        path: ./build_output/firmware
+        path: ./build_output
 
   tasmota32-NL:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
@@ -482,12 +482,12 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: firmware
-        path: ./build_output/firmware
+        path: ./build_output
 
   tasmota32-PL:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
@@ -502,12 +502,12 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: firmware
-        path: ./build_output/firmware
+        path: ./build_output
 
   tasmota32-PT:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
@@ -522,12 +522,12 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: firmware
-        path: ./build_output/firmware
+        path: ./build_output
 
   tasmota32-RO:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
@@ -542,12 +542,12 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: firmware
-        path: ./build_output/firmware
+        path: ./build_output
 
   tasmota32-RU:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
@@ -562,12 +562,12 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: firmware
-        path: ./build_output/firmware
+        path: ./build_output
 
   tasmota32-SE:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
@@ -582,12 +582,12 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: firmware
-        path: ./build_output/firmware
+        path: ./build_output
 
   tasmota32-SK:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
@@ -602,12 +602,12 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: firmware
-        path: ./build_output/firmware
+        path: ./build_output
 
   tasmota32-TR:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
@@ -622,12 +622,12 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: firmware
-        path: ./build_output/firmware
+        path: ./build_output
 
   tasmota32-TW:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
@@ -642,12 +642,12 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: firmware
-        path: ./build_output/firmware
+        path: ./build_output
 
   tasmota32-UK:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
@@ -662,12 +662,12 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: firmware
-        path: ./build_output/firmware
+        path: ./build_output
 
   tasmota32-VN:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Set up Python
       uses: actions/setup-python@v1
     - name: Install dependencies
@@ -682,4 +682,4 @@ jobs:
     - uses: actions/upload-artifact@v2
       with:
         name: firmware
-        path: ./build_output/firmware
+        path: ./build_output
