@@ -438,8 +438,11 @@ void Ws2812Dragon(void)
       dragonOffset_head++;
     }
   }
-//  dragonOffset_current = dragonOffset_head;
+  if (Light.power & 8) {
+  dragonOffset_current = dragonOffset_head;
+  } else {
   dragonOffset_current = (Settings->light_speed > 0) ? (((u_int64_t) millis()) - dragonOffset_sync) * 360 / 500 / Settings->light_speed / Settings->light_speed : 0;
+  }
 
   uint8_t a = 0;
   uint8_t b = Settings->dragon_len1;
@@ -522,7 +525,7 @@ void DragonFx_Rainbow(uint16_t firstLed, uint16_t lastLed, int16_t speed, uint8_
   }
 }
 
-#define DRAGON_COLORLIST_NUM 7
+#define DRAGON_COLORLIST_NUM 8
 struct colorPoint {
   uint8_t r, g, b;
   uint16_t len;
@@ -531,14 +534,18 @@ struct colorPoint {
 } colorpoints[DRAGON_COLORLIST_NUM];
 uint16_t colorPointTotalLen;
 
+uint8_t dragon_flex_a = 1;
+uint8_t dragon_flex_b = 1;
 void DragonColorlistInit() {
   colorpoints[0].r =   0; colorpoints[0].g = 255; colorpoints[0].b =   0; colorpoints[0].len = 600;
   colorpoints[1].r =   0; colorpoints[1].g = 255; colorpoints[1].b = 255; colorpoints[1].len = 600;
   colorpoints[2].r =   0; colorpoints[2].g =   0; colorpoints[2].b = 255; colorpoints[2].len = 600;
   colorpoints[3].r = 255; colorpoints[3].g =   0; colorpoints[3].b = 255; colorpoints[3].len = 600;
-  colorpoints[4].r = 255; colorpoints[4].g =   0; colorpoints[4].b =   0; colorpoints[4].len = 600;
-  colorpoints[5].r = 255; colorpoints[5].g =   0; colorpoints[5].b =   0; colorpoints[5].len =  50;
-  colorpoints[6].r = 255; colorpoints[6].g = 255; colorpoints[6].b =   0; colorpoints[6].len = 600;
+  colorpoints[4].r = 255; colorpoints[4].g =   0; colorpoints[4].b =   dragon_flex_a; colorpoints[4].len = 600 - dragon_flex_b;
+  colorpoints[5].r = 255; colorpoints[5].g =   0; colorpoints[5].b =   0; colorpoints[5].len =  dragon_flex_b;
+  colorpoints[6].r = 255; colorpoints[6].g =   dragon_flex_a; colorpoints[6].b =   0; colorpoints[6].len =  dragon_flex_b;
+  colorpoints[7].r = 255; colorpoints[7].g = 255; colorpoints[7].b =   0; colorpoints[7].len = 600 - dragon_flex_b;
+  colorPointTotalLen = 0;
   for (uint8_t i = 0; i < DRAGON_COLORLIST_NUM; i++) {
     struct colorPoint &cp = colorpoints[i];
     struct colorPoint &ncp = colorpoints[(i+1) % DRAGON_COLORLIST_NUM];
@@ -875,7 +882,7 @@ void CmndDragon(void)
     case 8:
       if (-99 != XdrvMailbox.payload) {
         dragonOffset_sync = ((uint64_t) millis()) - ((uint64_t) XdrvMailbox.payload);
-        dragonOffset_head = XdrvMailbox.payload;
+        dragonOffset_head = XdrvMailbox.payload ? XdrvMailbox.payload : 1800;
       }
       ResponseCmndIdxNumber(dragonOffset_sync);
       break;
@@ -884,6 +891,20 @@ void CmndDragon(void)
         dragonEnergySaver = (uint8_t) XdrvMailbox.payload;
       }
       ResponseCmndIdxNumber(dragonEnergySaver);
+      break;
+    case 10:
+      if (-99 != XdrvMailbox.payload) {
+        dragon_flex_a = (uint8_t) XdrvMailbox.payload;
+        DragonColorlistInit();
+      }
+      ResponseCmndIdxNumber(dragon_flex_a);
+      break;
+    case 11:
+      if (-99 != XdrvMailbox.payload) {
+        dragon_flex_b = (uint8_t) XdrvMailbox.payload;
+        DragonColorlistInit();
+      }
+      ResponseCmndIdxNumber(dragon_flex_b);
       break;
     default: // set hue-offset-per-led in rainbow mode
       if (-99 != XdrvMailbox.payload) {
