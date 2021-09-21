@@ -44,18 +44,16 @@ const uint8_t WS2812_SCHEMES = 8;      // Number of WS2812 schemes
 #endif // USE_DERG_RGB
 
 const char kWs2812Commands[] PROGMEM = "|"  // No prefix
-  D_CMND_LED "|" D_CMND_PIXELS "|" D_CMND_ROTATION "|" D_CMND_WIDTH 
 #ifdef USE_DERG_RGB
-  "|" D_CMND_DRAGON
+  D_CMND_DRAGON "|"
 #endif // USE_DERG_RGB
-  ;
+  D_CMND_LED "|" D_CMND_PIXELS "|" D_CMND_ROTATION "|" D_CMND_WIDTH ;
 
 void (* const Ws2812Command[])(void) PROGMEM = {
-  &CmndLed, &CmndPixels, &CmndRotation, &CmndWidth
 #ifdef USE_DERG_RGB
-  , &CmndDragon
+  &CmndDragon,
 #endif // USE_DERG_RGB
-  };
+  &CmndLed, &CmndPixels, &CmndRotation, &CmndWidth };
 
 #include <NeoPixelBus.h>
 

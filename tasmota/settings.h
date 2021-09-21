@@ -733,6 +733,7 @@ typedef struct {
   
   #define NONFREE 0
   #ifdef USE_DERG_RGB
+  uint8_t safety_buffer[30];
   // DRAGON settings
   uint16_t dragon_offset;
   uint16_t dragon_len1;
@@ -742,11 +743,10 @@ typedef struct {
   uint8_t dragon_fx2;
   uint8_t dragon_fx3;
 #undef NONFREE
-// TODO how to "add" using macros?
-#define NONFREE 11
+#define NONFREE 11 + 30
 #endif  // USE_DERG_RGB
 
-  uint8_t       free_f5f[61 - NONFREE];              // F5F - Decrement if adding new Setting variables just above and below
+  uint8_t       free_f5f[61 - (NONFREE)];              // F5F - Decrement if adding new Setting variables just above and below
 
   // Only 32 bit boundary variables below
 
