@@ -743,7 +743,7 @@ typedef struct {
   uint8_t dragon_fx2;
   uint8_t dragon_fx3;
 #undef NONFREE
-#define NONFREE 11 + 30
+#define NONFREE 11 + 30 + 8
 #endif  // USE_DERG_RGB
 
   uint8_t       free_f5f[61 - (NONFREE)];              // F5F - Decrement if adding new Setting variables just above and below
