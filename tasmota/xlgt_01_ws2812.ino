@@ -38,6 +38,11 @@
 #define XLGT_01             1
 
 #ifdef USE_DERG_RGB
+#include <base64.hpp>
+#endif // USE_DERG_RGB
+
+
+#ifdef USE_DERG_RGB
 const uint8_t WS2812_SCHEMES = 9;      // Number of WS2812 schemes
 #else
 const uint8_t WS2812_SCHEMES = 8;      // Number of WS2812 schemes
@@ -421,7 +426,6 @@ uint32_t dragonOffset_head;
 uint32_t dragonOffset_head_remainder;
 int64_t dragonOffset_sync;
 unsigned long dragonLastMillis;
-uint8_t dragonEnergySaver;
 
 uint8_t dragonOverlay_type;
 uint8_t dragonOverlay_status;
@@ -455,11 +459,8 @@ void Ws2812Dragon(void)
   Ws2812Dragon_Fx(firstLed, lastLed, Light.power & 2 ? Settings->dragon_fx2 : 0, Settings->light_color[1]);
   firstLed = lastLed; lastLed += Settings->dragon_len3;
   Ws2812Dragon_Fx(firstLed, lastLed, Light.power & 2 ? Settings->dragon_fx3 : 0, Settings->light_color[1]);
-  if (dragonEnergySaver) {
-    for (uint32_t i = Settings->dragon_len1; i < Settings->dragon_len1 + Settings->dragon_len2 + Settings->dragon_len3; i+=dragonEnergySaver) { strip->SetPixelColor(i, 0); }
-  }
   if (dragonOverlay_type > 0) {
-    DragonFx_Overlay(0, lastLed);
+    DragonFx_Overlay(Settings->dragon_len1, lastLed); // overlay only on segments 2&3
   }
   Ws2812StripShow();
 }
@@ -503,9 +504,6 @@ void DragonFx_Overlay(uint16_t firstLed, uint16_t lastLed) {
     firstLed = wsmap(diff, dragonOverlaySpeed, 0, midLed, 0);
     lastLed = wsmap(diff, dragonOverlaySpeed, 0, midLed, lastLed);
     allBlack = true;
-    c.R = 0;
-    c.G = 0;
-    c.B = 0;
   } 
 
   if (allBlack) {
@@ -573,6 +571,9 @@ void Ws2812Dragon_Fx(uint16_t firstLed, uint16_t lastLed, uint8_t fx, uint8_t di
       break;
     case 7:
       DragonFx_Colorlist(firstLed, lastLed, -Settings->dragon_offset, dimmer);
+      break;
+    case 8:
+      DragonFx_Misan(firstLed, lastLed, dimmer);
       break;
   }
 }
@@ -644,15 +645,15 @@ void DragonFx_Colorlist(uint16_t firstLed, uint16_t lastLed, int16_t speed, uint
 #else
   RgbColor c;
 #endif
-  uint8_t cpi = 0;
+  uint8_t cci = 0;
   for (uint16_t i = firstLed; i < lastLed; i++) {
     dragonOffset_current += speed;
     while (dragonOffset_current >= colorPointTotalLen) { dragonOffset_current -= colorPointTotalLen; }
     while (dragonOffset_current < 0) { dragonOffset_current += colorPointTotalLen; }
-    while (dragonOffset_current < colorpoints[cpi].lensum) { cpi--; }
-    while (dragonOffset_current >= colorpoints[cpi].lensum + colorpoints[cpi].len) { cpi++; }
-    uint16_t pos = dragonOffset_current - colorpoints[cpi].lensum;
-    struct colorPoint &cp = colorpoints[cpi];
+    while (dragonOffset_current < colorpoints[cci].lensum) { cci--; }
+    while (dragonOffset_current >= colorpoints[cci].lensum + colorpoints[cci].len) { cci++; }
+    uint16_t pos = dragonOffset_current - colorpoints[cci].lensum;
+    struct colorPoint &cp = colorpoints[cci];
 
     uint8_t r, g, b;
 
@@ -666,17 +667,290 @@ void DragonFx_Colorlist(uint16_t firstLed, uint16_t lastLed, int16_t speed, uint
   }
 }
 
+#define MISAN_SIZE 500
+uint8_t misan[MISAN_SIZE];
+
+#pragma pack(push, 1)
+struct drgn_misan_segment {
+  uint16_t start;
+  uint16_t length;
+  /* 0 - black / off
+   * 1 - linear blend, linear segment
+   * 2 - linear blend, circular segment
+   * 3 - copy
+   * 4 - static single color
+   */
+  uint8_t fx;
+  union {
+    struct {
+      uint8_t r, g, b;
+    } singlecolor;
+    struct {
+      int16_t speed;
+      int8_t px_offset;
+      uint8_t px_dimm;
+      int16_t circle_speed;
+      int8_t circle_offset;
+      uint16_t color_table_idx;
+      uint16_t color_offset;
+    } linear;
+    struct {
+      /* handling of different source/target lengths
+       * 0 - wrap around
+       * 1 - mirror
+       * 2 - stretch
+       */
+      uint8_t boundary_mode;
+      /** copy source index */
+      uint16_t start;
+      uint16_t length;
+      /** Copy modification type
+       * 0 - none, copy exactly
+       * 1 - dim, (0..255 -> 0..param)
+       * 2 - brighten (0..param -> 0..255)
+       */
+      uint8_t type;
+      uint16_t param;
+    } copy;
+  };
+};
+struct drgn_misan_blendentry {
+  uint8_t r, g, b;
+  uint16_t len;
+  uint16_t lensum; // sum of all len of previous entries
+};
+struct drgn_misan_blendtable {
+  uint8_t size; // number of entries
+  uint16_t totalLen; // sum of all len of all entries
+  struct drgn_misan_blendentry entry[0]; // actual size is dynamic
+};
+#pragma pack(pop)
+uint8_t drgn_misan_segSizeByFx[] = { 16, 16, 16, 16, 16 };
+
+// returns the lengths of the segment definition based on the segment effect. Returns 'too much' for unknown effects
+uint16_t DragonFx_Misan_getSegmentSizeByFx(uint8_t fx) {
+  return fx < sizeof(drgn_misan_segSizeByFx) ? drgn_misan_segSizeByFx[fx] : MISAN_SIZE;
+}
+
+// TODO remove firstled/lastled once everything is converted to MISAN
+// TODO replace 'dimmer' with Settings->light_color[0]
+void DragonFx_Misan(uint16_t firstLed, uint16_t lastLed, uint8_t dimmer) {
+  uint16_t misanIdx = 0;
+  do {
+    if (misanIdx >= MISAN_SIZE) return; // emergency brake
+    struct drgn_misan_segment *seg = reinterpret_cast<struct drgn_misan_segment*> (&misan[misanIdx]);
+    if (seg->start == 0 && seg->length == 0) break;
+    switch(seg->fx) {
+      case 0:
+      default:
+        DragonFx_Misan_static(firstLed, lastLed, dimmer, seg, 0, 0, 0);
+        break;
+      case 1:
+        DragonFx_Misan_linear(firstLed, lastLed, dimmer, seg, false);
+        break;
+      case 2:
+        DragonFx_Misan_linear(firstLed, lastLed, dimmer, seg, true);
+        break;
+      case 3:
+        DragonFx_Misan_copy(firstLed, lastLed, dimmer, seg);
+        break;
+      case 4:
+        DragonFx_Misan_static(firstLed, lastLed, dimmer, seg, seg->singlecolor.r, seg->singlecolor.g, seg->singlecolor.b);
+        break;
+    }
+    misanIdx += DragonFx_Misan_getSegmentSizeByFx(seg->fx);
+  } while(true);
+}
+
+unsigned long florp_millis = 0;
+void DragonFx_Misan_linear(uint16_t firstLed, uint16_t lastLed, uint8_t dimmer, struct drgn_misan_segment *seg, bool circular) {
+#if (USE_WS2812_CTYPE > NEO_3LED)
+  RgbwColor c;
+  c.W = 0;
+#else
+  RgbColor c;
+#endif
+  // TODO use a segment-local florp_millis
+  unsigned long now = millis() - florp_millis;
+/*
+  uint16_t diff = now - florp_millis;
+  if (seg->speed > 0 && diff >= seg->speed) {
+    florp_millis = now - diff % seg->speed;
+    seg->color_offset += diff / seg->speed;
+  } else if (seg->speed < 0 && diff >= -seg->speed) { // use "negative seg->speed" everywhere, otherwise signed int casts would be necessary
+    florp_millis = now - diff % -seg->speed;
+    seg->color_offset -= diff / -seg->speed;
+  }
+*/
+  struct drgn_misan_blendtable *table = reinterpret_cast<struct drgn_misan_blendtable*> (&misan[seg->linear.color_table_idx]);
+
+  int32_t blend_index_current = seg->linear.color_offset + (seg->linear.speed == 0 ? 0 : seg->linear.speed > 0 ? now / seg->linear.speed : table->totalLen - 1 - ((now / (-seg->linear.speed)) % table->totalLen));
+  int32_t circle_offset_current = seg->linear.circle_offset + (seg->linear.circle_speed == 0 ? 0 : seg->linear.circle_speed > 0 ? now / seg->linear.circle_speed : seg->length - 1 - ((now / (-seg->linear.circle_speed)) % seg->length));
+
+  uint16_t dst_start = firstLed + seg->start;
+  uint8_t cci = 0;
+  uint8_t cached_cci = -1; // cache starts invalid
+  uint16_t len;
+  uint8_t r, g, b;
+  int16_t dr, dg, db;
+  uint16_t px_count = circular && seg->length > 0 ? (seg->length >> 1) + 1 : seg->length;
+  uint8_t pxdimm = dimmer;
+  for (uint16_t i = 0; i < px_count; i++) {
+    // limit global offset to total range of color-blend table
+    if (blend_index_current >= table->totalLen) { blend_index_current %= table->totalLen; }
+    if (blend_index_current < 0) { blend_index_current = table->totalLen - 1 - ((blend_index_current) % table->totalLen); }
+
+    // calculate current color index (cci) in the color-blend table
+    // since the offset is already capped, no over/underflow can occur
+    while (blend_index_current < table->entry[cci].lensum) { cci--; }
+    while (blend_index_current >= table->entry[cci].lensum + table->entry[cci].len) { cci++; }
+
+    // relative position inside the current color-blend table entry
+    uint16_t pos = blend_index_current - table->entry[cci].lensum;
+
+    // cache some values
+    if (cached_cci != cci) { // cache still valid?
+      cached_cci = cci;
+      struct drgn_misan_blendentry entry = table->entry[cci];
+      struct drgn_misan_blendentry next_entry = table->entry[(cci+1) % table->size];
+      len = entry.len;
+      r = entry.r;
+      g = entry.g;
+      b = entry.b;
+      dr = next_entry.r - r;
+      dg = next_entry.g - g;
+      db = next_entry.b - b;
+    }
+
+    // calculate color
+    uint8_t r2 = map2(r, dr, len, pos);
+    uint8_t g2 = map2(g, dg, len, pos);
+    uint8_t b2 = map2(b, db, len, pos);
+    c.R = changeUIntScale(r2, 0, 255, 0, pxdimm);
+    c.G = changeUIntScale(g2, 0, 255, 0, pxdimm);
+    c.B = changeUIntScale(b2, 0, 255, 0, pxdimm);
+
+    // set color
+    uint16_t dst_idx = dst_start + ((circle_offset_current + i) % seg->length);
+    if (dst_idx < lastLed) {
+      strip->SetPixelColor(dst_idx, c);
+    }
+
+    if (circular) {
+      uint16_t dst_idx2 = dst_start + ((seg->length + circle_offset_current - i) % seg->length);
+      if (dst_idx2 != dst_idx && dst_idx2 < lastLed) {
+        strip->SetPixelColor(dst_idx2, c);
+      }
+    }
+
+    // calculate per-led (pixel) offset inside this segment for next loop iteration
+    blend_index_current = (table->totalLen + blend_index_current + (seg->linear.px_offset % table->totalLen)) % table->totalLen;
+    if (seg->linear.px_dimm != 0x80) pxdimm = (pxdimm * seg->linear.px_dimm) >> 7;
+  }
+}
+
+void DragonFx_Misan_copy(uint16_t firstLed, uint16_t lastLed, uint8_t dimmer, struct drgn_misan_segment *seg) {
+#if (USE_WS2812_CTYPE > NEO_3LED)
+  RgbwColor c;
+  c.W = 0;
+#else
+  RgbColor c;
+#endif
+  uint16_t src_start = firstLed + seg->copy.start;
+  uint16_t dst_start = firstLed + seg->start;
+  // TODO: handle overlapping areas
+  uint16_t segLen = abs(seg->length); // TODO can't currently happen, as seg->length is unsigned
+  for (uint16_t idx = 0; idx < segLen; idx++) {
+    uint16_t dst_idx = seg->length >= 0 ? dst_start + idx : dst_start - seg->length - 1 - idx;
+    if (dst_idx >= lastLed) continue;
+    uint16_t src_idx;
+    switch(seg->copy.boundary_mode) {
+      case 1: { // mirror
+        uint16_t j = idx % ((seg->copy.length-1) << 1);
+        if (j >= seg->copy.length) j = 2 * (seg->copy.length-1) - j;
+        src_idx = src_start + j;
+        break; }
+      case 2: // stretch
+        src_idx = src_start + changeUIntScale(idx, 0, segLen-1, 0, seg->copy.length-1);
+        break;
+      case 10: // reverse wrap
+        src_idx = src_start + seg->copy.length-1 - (idx % seg->copy.length);
+        break;
+      case 12: // reverse stretch
+        src_idx = src_start + changeUIntScale(idx, 0, segLen-1, seg->copy.length-1, 0);
+        break;
+      default: // wrap
+        src_idx = src_start + (idx % seg->copy.length);
+    }
+    if (src_idx < lastLed) {
+      c = strip->GetPixelColor(src_idx);
+    } else {
+      c.R = 0;
+      c.G = 0;
+      c.B = 0;
+    }
+    switch(seg->copy.type) {
+      case 1:
+        c.R = changeUIntScale(c.R, 0, 255, 0, seg->copy.param);
+        c.G = changeUIntScale(c.G, 0, 255, 0, seg->copy.param);
+        c.B = changeUIntScale(c.B, 0, 255, 0, seg->copy.param);
+        break;
+      case 2:
+        c.R = changeUIntScale(c.R, 0, seg->copy.param, 0, 255);
+        c.G = changeUIntScale(c.G, 0, seg->copy.param, 0, 255);
+        c.B = changeUIntScale(c.B, 0, seg->copy.param, 0, 255);
+        break;
+    }
+    strip->SetPixelColor(dst_idx, c);
+  }
+}
+
+void DragonFx_Misan_static(uint16_t firstLed, uint16_t lastLed, uint8_t dimmer, struct drgn_misan_segment *seg, uint8_t r, uint8_t g, uint8_t b) {
+#if (USE_WS2812_CTYPE > NEO_3LED)
+  RgbwColor c;
+  c.W = 0;
+#else
+  RgbColor c;
+#endif
+  c.R = changeUIntScale(r, 0, 255, 0, dimmer);
+  c.G = changeUIntScale(g, 0, 255, 0, dimmer);
+  c.B = changeUIntScale(b, 0, 255, 0, dimmer);
+  uint16_t dst_start = firstLed + seg->start;
+  for (uint16_t i = 0; i < seg->length; i++) {
+    uint16_t dst_idx = dst_start + i;
+    if (dst_idx >= lastLed) break;
+    strip->SetPixelColor(dst_idx, c);
+  }
+}
+
+void SetMisanTemplate(uint8_t mode) {
+  switch (mode) {
+    case 1: {
+      uint8_t new_misan[] = { 0x0, 0x0, 0xc, 0x0, 0x2, 0xa, 0x0, 0xa, 0x0, 0x0, 0x0, 0x14, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x6, 0x58, 0x2, 0x0, 0x40, 0x0, 0x64, 0x0, 0x0, 0x0, 0x0, 0x80, 0x0, 0x64, 0x0, 0x64, 0x0, 0x0, 0x20, 0x0, 0x64, 0x0, 0xc8, 0x0, 0x0, 0x60, 0x0, 0x64, 0x0, 0x2c, 0x1, 0x0, 0x80, 0x0, 0x64, 0x0, 0x90, 0x1, 0x0, 0x60, 0x0, 0x64, 0x0, 0xf4, 0x1 };
+      std::copy(new_misan, new_misan+sizeof(new_misan)/sizeof(new_misan[0]), misan);
+      break;
+    }
+    case 2: { // Dancer pattern (fast)
+      uint8_t new_misan[] = {  0x00,  0x00,  0x0c,  0x00,  0x02,  0x19,  0x00,  0x0a,  0xfa,  0x00,  0x00,  0xc3,  0x00,  0x00,  0x00,  0x0c,  0x00,  0x04,  0x00,  0x03,  0x0c,  0x00,  0x00,  0x0c,  0x00,  0x01,  0x80,  0x00,  0x00,  0x00,  0x10,  0x00,  0x0c,  0x00,  0x02,  0x19,  0x00,  0x0a,  0xfa,  0x00,  0x00,  0xc3,  0x00,  0xc8,  0x00,  0x1c,  0x00,  0x04,  0x00,  0x03,  0x0c,  0x10,  0x00,  0x0c,  0x00,  0x01,  0x80,  0x00,  0x00,  0x00,  0x20,  0x00,  0x0c,  0x00,  0x02,  0x19,  0x00,  0x0a,  0xfa,  0x00,  0x00,  0xc3,  0x00,  0x20,  0x03,  0x2c,  0x00,  0x04,  0x00,  0x03,  0x0c,  0x20,  0x00,  0x0c,  0x00,  0x01,  0x80,  0x00,  0x00,  0x00,  0x30,  0x00,  0x0c,  0x00,  0x02,  0x19,  0x00,  0x0a,  0xfa,  0x00,  0x00,  0xc3,  0x00,  0x08,  0x07,  0x3c,  0x00,  0x04,  0x00,  0x03,  0x0c,  0x30,  0x00,  0x0c,  0x00,  0x01,  0x80,  0x00,  0x00,  0x00,  0x40,  0x00,  0x0c,  0x00,  0x02,  0x19,  0x00,  0x0a,  0xfa,  0x00,  0x00,  0xc3,  0x00,  0x80,  0x0c,  0x4c,  0x00,  0x04,  0x00,  0x03,  0x0c,  0x40,  0x00,  0x0c,  0x00,  0x01,  0x80,  0x00,  0x00,  0x00,  0x50,  0x00,  0x0c,  0x00,  0x02,  0x19,  0x00,  0x0a,  0xfa,  0x00,  0x00,  0xc3,  0x00,  0x88,  0x13,  0x5c,  0x00,  0x04,  0x00,  0x03,  0x0c,  0x50,  0x00,  0x0c,  0x00,  0x01,  0x80,  0x00,  0x00,  0x00,  0x00,  0x00,  0x00,  0x00,  0x00,  0x00,  0x00,  0x00,  0x00,  0x00,  0x00,  0x00,  0x00,  0x00,  0x00,  0x06,  0xb0,  0x04,  0xff,  0x00,  0x00,  0xc8,  0x00,  0x00,  0x00,  0xff,  0xff,  0x00,  0xc8,  0x00,  0xc8,  0x00,  0x00,  0xff,  0x00,  0xc8,  0x00,  0x90,  0x01,  0x00,  0xff,  0xff,  0xc8,  0x00,  0x58,  0x02,  0x00,  0x00,  0xff,  0xc8,  0x00,  0x20,  0x03,  0xff,  0x00,  0xff,  0xc8,  0x00,  0xe8,  0x03 };
+      std::copy(new_misan, new_misan+sizeof(new_misan)/sizeof(new_misan[0]), misan);
+      break;
+    }
+  }
+}
+
+
+// TODO was used for debugging / returning calculated values for a specific offset
 struct RgbwColor DragonFx_Test(int64_t offset, uint8_t dimmer) {
   RgbwColor c;
   c.W = 0;
-  uint8_t cpi = 0;
+  uint8_t cci = 0;
 //    offset += speed;
     while (offset >= colorPointTotalLen) { offset -= colorPointTotalLen; }
     while (offset < 0) { offset += colorPointTotalLen; }
-    while (offset < colorpoints[cpi].lensum) { cpi--; }
-    while (offset >= colorpoints[cpi].lensum + colorpoints[cpi].len) { cpi++; }
-    uint16_t pos = offset - colorpoints[cpi].lensum;
-    struct colorPoint &cp = colorpoints[cpi];
+    while (offset < colorpoints[cci].lensum) { cci--; }
+    while (offset >= colorpoints[cci].lensum + colorpoints[cci].len) { cci++; }
+    uint16_t pos = offset - colorpoints[cci].lensum;
+    struct colorPoint &cp = colorpoints[cci];
 
     uint8_t r, g, b;
 
@@ -923,7 +1197,7 @@ void CmndWidth(void)
  * 6 - effect for segment 2
  * 7 - effect for segment 3
  * 8 - sync offset
- * 9 - energy saver (0=off 2=blank every second led)
+ * 9 - removed
  * 10-13 - debug stuff
  * 14 - Dragon Overlay, color:
  *      0 - off
@@ -932,21 +1206,47 @@ void CmndWidth(void)
  *      3 - blue
  *     60 - yellow
  *     64 - white
-
+ * 15 - write byte/word value to MISAN.
+ *      for value as 0xAAAABBCC
+ *      AA: 0..MISAN_SIZE write 8 bit value CC to address AA
+ *      AA: >8192 write 16 bit value, CC to address AA, BB to address AA+1
+ * 16 - read byte/word value from MISAN, value = 0xAAAA0000 to specify address and 8/16 bit
+ * 17 - read specific MISAN cooked values (for debug)
+ * 18 - MISAN template
+ *    1:
  * 
- * magic value for "no parameter given" is -99
+ * Tasmota Mailbox magic value for "no (numeric) parameter given" is -99
  * 
  * Effects
  * 0 - all black (off)
- * 1 - all white
+ * 1 - all white (with 'color temp')
+ * 15 - like 1, but rainbow will use the 'head' offset calculation
  * 2 - rainbow (all same color)
  * 3 - rainbow (use Dragon1 <x> to give hue offset per pixel)
- * 4 - rainbow (like 4, but different direction)
+ * 4 - rainbow (like 4, but reverse direction)
+ * 5 - blink
+ * 6 - Colorlist
+ * 7 - Colorlist, reverse direction
+ * 8 - Effect 'Misan'
+ * 
+ * TODO
+ * - replace "three segments" and "all effects" with new MISAN code
+ * - replace dragon2/3/4 segment lengths with Settings->light_pixels / command "Pixels"
+ * - ensure "colorlist" can be fully replaced by MISAN (especially: up->down count change)
+ * - enhance MISAN to react to POWERx, DIMMERx in segment config
+ * - test/verify MISAN Base64 write, and add paginated Base64 read
  */
 #ifdef USE_DERG_RGB
 void CmndDragon(void)
 {
   switch(XdrvMailbox.index) {
+    case 0: // set hue-offset-per-led in rainbow mode
+    case 1:
+      if (-99 != XdrvMailbox.payload) {
+        Settings->dragon_offset = XdrvMailbox.payload;
+      }
+      ResponseCmndIdxNumber(Settings->dragon_offset);
+      break;
     case 2:
       if (-99 != XdrvMailbox.payload) {
         Settings->dragon_len1 = XdrvMailbox.payload;
@@ -990,14 +1290,9 @@ void CmndDragon(void)
       if (-99 != XdrvMailbox.payload) {
         dragonOffset_sync = ((uint64_t) millis()) - ((uint64_t) XdrvMailbox.payload);
         dragonOffset_head = XdrvMailbox.payload;
+        florp_millis = millis();
       }
       ResponseCmndIdxNumber(dragonOffset_head);
-      break;
-    case 9:
-      if (-99 != XdrvMailbox.payload) {
-        dragonEnergySaver = (uint8_t) XdrvMailbox.payload;
-      }
-      ResponseCmndIdxNumber(dragonEnergySaver);
       break;
     case 10:
       if (-99 != XdrvMailbox.payload) {
@@ -1033,11 +1328,100 @@ void CmndDragon(void)
       ResponseCmndIdxNumber(dragonOverlay_type);
       break;
     }
-    default: // set hue-offset-per-led in rainbow mode
+    case 15: {
       if (-99 != XdrvMailbox.payload) {
-        Settings->dragon_offset = XdrvMailbox.payload;
+        int16_t idx = ((uint32_t) XdrvMailbox.payload) >> 16;
+        bool wide = idx >= 8192;
+        if (wide) idx -= 8192;
+        if (idx < (MISAN_SIZE - (wide ? 1 : 0))) {
+          misan[idx] = XdrvMailbox.payload & 0xFF;
+          if (wide) misan[idx+1] = (XdrvMailbox.payload >> 8) & 0xFF;
+        }
+      } else {
+        // byte 0 = checksum (sum of all bytes)
+        // byte 1,2 = start address in MISAN
+        // byte 3..x = BASE64 of the data
+
+        // in-place BASE64 decode
+        unsigned int output_length = decode_base64((unsigned char*) XdrvMailbox.data, (unsigned char*) XdrvMailbox.data);
+
+        // first pass: verify checksum, check total length
+        uint8_t crc = 0;
+        if (output_length < 3) { ResponseCmndIdxNumber(-1); return; }
+        for(uint8_t idx=1; idx<output_length; idx++) { crc += XdrvMailbox.data[idx]; }
+        if (crc != XdrvMailbox.data[0]) { ResponseCmndIdxNumber(-2); return; }
+        uint16_t targetIdx = XdrvMailbox.data[1] + (XdrvMailbox.data[2] << 8);
+        if (targetIdx + output_length - 3 >= MISAN_SIZE) { ResponseCmndIdxNumber(-3); return; }
+
+        // second pass: set MISAN
+        for(uint8_t idx=3; idx<output_length; idx++, targetIdx++) {
+          misan[targetIdx] = XdrvMailbox.data[idx];
+        }
       }
-      ResponseCmndIdxNumber(Settings->dragon_offset);
+      ResponseCmndIdxNumber(0);
+      break;
+    }
+    case 16: { // read MISAN
+      if (-99 != XdrvMailbox.payload) {
+        int16_t idx = ((uint32_t) XdrvMailbox.payload) >> 16;
+        bool wide = idx >= 8192;
+        if (wide) idx -= 8192;
+        if (idx < (MISAN_SIZE - (wide ? 1 : 0))) {
+          ResponseCmndIdxNumber((idx << 16) + misan[idx] + (wide ? (misan[idx+1] << 8) + (8192 << 16) : 0));
+        }
+      }
+      break;
+    }
+    case 17: { // read MISAN cooked
+      struct drgn_misan_segment *seg = reinterpret_cast<struct drgn_misan_segment*> (&misan[XdrvMailbox.payload >> 8]);
+      struct drgn_misan_blendtable *table = reinterpret_cast<struct drgn_misan_blendtable*> (&misan[XdrvMailbox.payload >> 8]);
+      switch (XdrvMailbox.payload & 0xFF) {
+        case 0: ResponseCmndIdxNumber(seg->start); break;
+        case 1: ResponseCmndIdxNumber(seg->length); break;
+        case 2: ResponseCmndIdxNumber(seg->fx); break;
+        case 3: ResponseCmndIdxNumber(seg->singlecolor.r); break;
+        case 4: ResponseCmndIdxNumber(seg->singlecolor.g); break;
+        case 5: ResponseCmndIdxNumber(seg->singlecolor.b); break;
+        case 6: ResponseCmndIdxNumber(seg->linear.speed); break;
+        case 7: ResponseCmndIdxNumber(seg->linear.px_offset); break;
+        case 8: ResponseCmndIdxNumber(seg->linear.circle_speed); break;
+        case 9: ResponseCmndIdxNumber(seg->linear.circle_offset); break;
+        case 10: ResponseCmndIdxNumber(seg->linear.color_table_idx); break;
+        case 11: ResponseCmndIdxNumber(seg->linear.color_offset); break;
+        case 12: ResponseCmndIdxNumber(seg->copy.boundary_mode); break;
+        case 13: ResponseCmndIdxNumber(seg->copy.start); break;
+        case 14: ResponseCmndIdxNumber(seg->copy.length); break;
+        case 15: ResponseCmndIdxNumber(seg->copy.type); break;
+        case 16: ResponseCmndIdxNumber(seg->copy.param); break;
+        case 20: ResponseCmndIdxNumber(table->size); break;
+        case 21: ResponseCmndIdxNumber(table->totalLen); break;
+        case 22: ResponseCmndIdxNumber(Light.power); break;
+        case 23: ResponseCmndIdxNumber(seg->linear.px_dimm); break;
+        case 100: ResponseCmndIdxNumber(sizeof(struct drgn_misan_segment)); break;
+        case 101: ResponseCmndIdxNumber(sizeof(struct drgn_misan_blendtable)); break;
+        case 102: ResponseCmndIdxNumber(sizeof(struct drgn_misan_blendentry)); break;
+        case 103: ResponseCmndIdxNumber(sizeof(int)); break;
+        case 104: ResponseCmndIdxNumber(sizeof(misan)); break;
+        default: {
+          uint8_t idx = (XdrvMailbox.payload & 0xFF) - 50;
+          uint8_t entryId = idx / 5;
+          switch (idx % 5) {
+            case 0: ResponseCmndIdxNumber(table->entry[entryId].r); break;
+            case 1: ResponseCmndIdxNumber(table->entry[entryId].g); break;
+            case 2: ResponseCmndIdxNumber(table->entry[entryId].b); break;
+            case 3: ResponseCmndIdxNumber(table->entry[entryId].len); break;
+            case 4: ResponseCmndIdxNumber(table->entry[entryId].lensum); break;
+          }
+          break; }
+      } break;
+    } break;
+    case 18: // set MISAN template
+      if (-99 != XdrvMailbox.payload) {
+        uint8_t mode = (uint8_t) XdrvMailbox.payload;
+        SetMisanTemplate(mode);
+      }
+      ResponseCmndIdxNumber(0);
+      break;
   }
 }
 #endif // USE_DERG_RGB
