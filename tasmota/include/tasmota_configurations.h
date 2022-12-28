@@ -938,6 +938,42 @@
 #endif  // FIRMWARE_MINICUSTOM
 
 
+/*********************************************************************************************\
+ * [tasmota-dragon-neopixel.bin]
+ * Additional RGB color effects (based on lite image)
+\*********************************************************************************************/
+
+#ifdef FIRMWARE_DRAGON_NEOPIXEL
+
+#undef CODE_IMAGE_STR
+#define CODE_IMAGE_STR "derg"
+
+#define USE_LIGHT
+#define USE_WS2812
+#define USE_WS2812_DMA
+#define USE_WS2812_HARDWARE  NEO_HW_WS2812
+#define USE_DERG_RGB
+
+#endif  // FIRMWARE_DRAGON_NEOPIXEL
+
+
+/*********************************************************************************************\
+ * [tasmota-dragon-sensors.bin]
+ * (based on sensors image)
+\*********************************************************************************************/
+
+#ifdef FIRMWARE_DRAGON_SENSORS
+
+#undef CODE_IMAGE_STR
+#define CODE_IMAGE_STR "derg"
+
+#ifndef USE_DERG_SENSORS
+#define USE_DERG_SENSORS
+#endif
+
+#endif  // FIRMWARE_DRAGON_SENSORS
+
+
 #ifdef ESP32
 #include "tasmota_configurations_ESP32.h"
 #endif  // ESP32
