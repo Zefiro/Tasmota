@@ -1020,7 +1020,7 @@ void SetMisanPartlist(uint8_t partlistIdx) {
   }
   DragonFx_Misan_Initialize();
   misan_active_partlist = partlistIdx;
-  // clear segments
+  // clear segments (because they are probably technically misaligned and semantically not fitting now)
   struct drgn_misan_segment *seg = reinterpret_cast<struct drgn_misan_segment*> (&misan[DragonFx_Misan_SegmentsIdx]);
   seg->type = 0;
   misan_active_template = 0;
@@ -1347,7 +1347,9 @@ void Ws2812CopyPixels(const uint8_t *buf, size_t len, size_t offset_in_matrix) {
 
 
 /* Dragon Command: index vs payload
- * 8 - sync offset
+ * 1 - enable segment X
+ * 2 - disable segment X
+ * 8 - sync color calculation offset (by setting to zero)
  * 15 - write byte/word value to MISAN.
  *      for value as 0xAAAABBCC
  *      AA: 0..MISAN_SIZE write 8 bit value CC to address AA
@@ -1355,6 +1357,7 @@ void Ws2812CopyPixels(const uint8_t *buf, size_t len, size_t offset_in_matrix) {
  * 16 - read byte/word value from MISAN, value = 0xAAAA0000 to specify address and 8/16 bit
  * 17 - read specific MISAN cooked values (for debug)
  * 18 - MISAN template
+ * 19 - set MISAN partlist (clears template, so call this one first)
  * 
  * Tasmota Mailbox magic value for "no (numeric) parameter given" is -99
  * 
@@ -1393,7 +1396,7 @@ void CmndDragon(void)
         ResponseCmndIdxNumber(-2); // must give a segment index
       break;
     }
-    case 8:
+    case 8: // sync color calculation offset (by setting to zero)
       if (-99 != XdrvMailbox.payload) {
 //        dragonOffset_sync = ((uint64_t) millis()) - ((uint64_t) XdrvMailbox.payload);
 //        dragonOffset_head = XdrvMailbox.payload;
@@ -1508,7 +1511,7 @@ void CmndDragon(void)
       } 
       ResponseCmndIdxNumber(misan_active_template);
       break;
-    case 19: // set MISAN partlist (clears template)
+    case 19: // set MISAN partlist (clears template, so call this one first)
       if (-99 != XdrvMailbox.payload) {
         uint8_t partlistIdx = (uint8_t) XdrvMailbox.payload;
         SetMisanPartlist(partlistIdx);
