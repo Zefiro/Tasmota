@@ -985,7 +985,13 @@
 #define USE_WS2812
 #define USE_WS2812_DMA
 #define USE_WS2812_HARDWARE  NEO_HW_WS2812
+#undef USE_WS2812_CTYPE
+#define USE_WS2812_CTYPE     NEO_GRBW 
 #define USE_DERG_RGB
+
+// from the sensors package
+#define USE_I2C
+#define USE_INA219
 
 #endif  // FIRMWARE_DRAGON_NEOPIXEL
 
