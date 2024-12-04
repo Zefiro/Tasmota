@@ -683,6 +683,40 @@ void BMP_EnterSleep(void) {
  * Interface
 \*********************************************************************************************/
 
+#ifdef USE_DERG_SENSORS
+uint8_t dragon_state;
+
+void DragonRead() {
+  switch (dragon_state) {
+    case 0:
+      // set config and trigger oversampled conversions
+      for (uint32_t bmp_idx = 0; bmp_idx < bmp_count; bmp_idx++) {
+        if (bmp_sensors[bmp_idx].bmp_type == BME280_CHIPID) {
+          I2cWrite8(bmp_sensors[bmp_idx].bmp_address, BME280_REGISTER_CONTROL, 0x00);
+          I2cWrite8(bmp_sensors[bmp_idx].bmp_address, BME280_REGISTER_CONTROLHUMID, 0x03);  // 4x oversampling
+          I2cWrite8(bmp_sensors[bmp_idx].bmp_address, BME280_REGISTER_CONFIG, 0b01001000);  // measurements each 1/8sec, IIR Filter x4
+          I2cWrite8(bmp_sensors[bmp_idx].bmp_address, BME280_REGISTER_CONTROL, 0b01101111); // 4x oversampling, normal mode
+        }
+      }
+      break;
+    case 2:
+      // read
+      BmpRead();
+      // and off to sleep mode
+      for (uint32_t bmp_idx = 0; bmp_idx < bmp_count; bmp_idx++) {
+        if (bmp_sensors[bmp_idx].bmp_type == BME280_CHIPID) {
+          I2cWrite8(bmp_sensors[bmp_idx].bmp_address, BME280_REGISTER_CONTROL, 0x00);
+        }
+      }
+      break;
+    case 20:
+      // wait some seconds, then repeat
+      dragon_state = -1;
+  }
+  dragon_state++;
+}
+#endif // USE_DERG_SENSORS
+
 bool Xsns09(uint32_t function) {
   if (!I2cEnabled(XI2C_10)) { return false; }
 
@@ -694,8 +728,11 @@ bool Xsns09(uint32_t function) {
   else if (bmp_count) {
     switch (function) {
       case FUNC_EVERY_SECOND:
+#ifdef USE_DERG_SENSORS
+        DragonRead();
+#else
         BmpRead();
-        break;
+#endif // USE_DERG_SENSORS        break;
       case FUNC_JSON_APPEND:
         BmpShow(1);
         break;
