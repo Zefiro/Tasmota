@@ -1188,12 +1188,17 @@ void Ws2812ShowScheme(void)
       Ws2812DDP();
       break;
 #endif  // USE_NETWORK_LIGHT_SCHEMES
+
 #ifdef USE_DERG_RGB
+ #ifdef USE_NETWORK_LIGHT_SCHEMES
     case 11: // Dragon
+ #endif  // USE_NETWORK_LIGHT_SCHEMES
+    case 10: // Dragon
       Ws2812Dragon();
       Ws2812.show_next = 1;
       break;
 #endif // USE_DERG_RGB
+
     default:
 			if(Settings->light_step_pixels > 0){
 				Ws2812Steps(scheme -1);
